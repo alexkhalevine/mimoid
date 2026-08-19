@@ -8,16 +8,17 @@ Examples:
 
 1. Chat UI
    
-<img width="2986" height="1854" alt="Screenshot 2026-08-15 at 21 58 16" src="https://github.com/user-attachments/assets/49fc8441-0560-4963-8eac-01ec79b67274" />
-3. Training section, memory example:
+<img width="2990" height="1756" alt="Screenshot 2026-08-19 at 20 14 23" src="https://github.com/user-attachments/assets/b3d16bf9-7e23-42ea-8aa0-01ced8b9da9d" />
 
-<img width="2984" height="1858" alt="Screenshot 2026-08-15 at 21 58 30" src="https://github.com/user-attachments/assets/9afd62ed-e3b4-4cd8-91db-9da672855bf8" />
+3. Training section:
+
+<img width="2984" height="1246" alt="Screenshot 2026-08-19 at 20 15 01" src="https://github.com/user-attachments/assets/effa8c10-9458-40c0-a4b6-51beba57570f" />
 
 3. System info:
+   
+<img width="1642" height="1470" alt="Screenshot 2026-08-19 at 20 15 37" src="https://github.com/user-attachments/assets/f5f15bf6-536c-4d1b-8e0a-a0819a1dd9eb" />
 
-<img width="2952" height="1876" alt="Screenshot 2026-08-15 at 21 58 54" src="https://github.com/user-attachments/assets/fc337ff9-6929-45af-8766-39eb7b14d654" />
  
-
 ## Architecture
 
 - **Shell:** [Tauri v2](https://tauri.app) — Rust core + system WebView, TypeScript frontend.
