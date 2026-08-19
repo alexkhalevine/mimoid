@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mimoid</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <header class="app-header">
+      <h1 class="brand">Mimoid</h1>
+      <nav class="mode-switch">
+        <button id="tab-talk" class="view-tab view-tab--active" type="button">Talk</button>
+        <button id="tab-train" class="view-tab" type="button">Train</button>
+        <button id="tab-tools" class="view-tab" type="button">Tools</button>
+        <button id="tab-system" class="view-tab" type="button">System</button>
+        <button id="tab-architecture" class="view-tab" type="button">Architecture</button>
+      </nav>
+
+      <div class="header-status">
+        <span id="header-winrate-pill" class="winrate-pill" hidden>
+          <span class="winrate-pill-dot"></span>
+          <span class="winrate-pill-label">default setup wins</span>
+          <span id="header-winrate-value" class="winrate-pill-value">—%</span>
+        </span>
+
+        <button id="status-ready-pill" class="ready-pill" type="button" aria-expanded="false">
+          <span id="status-ready-dot" class="ready-pill-dot"></span>
+          <span id="status-ready-text" class="ready-pill-text">Checking…</span>
+          <span class="ready-pill-caret">details ⌄</span>
+        </button>
+
+        <select id="language-select" class="language-select" hidden></select>
+      </div>
+
+      <div id="status-details-popover" class="status-popover" hidden>
+        <div class="status-popover-heading">System details</div>
+        <div class="status-popover-row">
+          <span id="sidecar-dot" class="status-dot"></span>
+          <span class="status-popover-label">Sidecar</span>
+          <span id="sidecar-text" class="status-popover-value">checking…</span>
+        </div>
+        <div class="status-popover-row">
+          <span id="ollama-dot" class="status-dot"></span>
+          <span class="status-popover-label">Ollama</span>
+          <span id="ollama-text" class="status-popover-value">checking…</span>
+          <button id="ollama-toggle" class="status-button" type="button" hidden></button>
+        </div>
+        <div class="status-popover-divider"></div>
+        <div class="status-popover-meter">
+          <div class="status-popover-meter-row">
+            <span class="status-popover-label">ChromaDB size</span>
+            <span id="chroma-size-text" class="status-popover-value">—</span>
+          </div>
+        </div>
+        <div class="status-popover-divider"></div>
+        <div class="status-popover-meter">
+          <div class="status-popover-meter-row">
+            <span class="status-popover-label">CPU</span>
+            <span id="popover-cpu-value" class="status-popover-value">—</span>
+          </div>
+          <div class="status-popover-bar"><div id="popover-cpu-bar" class="status-popover-bar-fill status-popover-bar-fill--cpu"></div></div>
+        </div>
+        <div class="status-popover-meter">
+          <div class="status-popover-meter-row">
+            <span class="status-popover-label">RAM</span>
+            <span id="popover-ram-value" class="status-popover-value">—</span>
+          </div>
+          <div class="status-popover-bar"><div id="popover-ram-bar" class="status-popover-bar-fill status-popover-bar-fill--ram"></div></div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <section id="bootstrap-panel" class="setup-panel" hidden>
+        <p id="bootstrap-message">Preparing your digital twin…</p>
+        <pre id="bootstrap-log" class="bootstrap-log" hidden></pre>
+      </section>
+
+      <section id="setup-panel" class="setup-panel" hidden>
+        <div id="setup-spinner" class="setup-spinner" aria-hidden="true" hidden>
+          <span class="symm-loader-bars symm-loader-bars--md">
+            <span class="symm-loader-bar"></span>
+            <span class="symm-loader-bar"></span>
+            <span class="symm-loader-bar"></span>
+            <span class="symm-loader-bar"></span>
+            <span class="symm-loader-bar"></span>
+          </span>
+        </div>
+        <p id="setup-message">Checking readiness…</p>
+        <progress id="setup-progress" hidden></progress>
+        <button id="setup-action" class="setup-action" type="button" hidden></button>
+      </section>
+
+      <section id="talk-view" class="view">
+        <section id="chat-panel" class="chat-panel" hidden>
+          <div class="spine-topbar">
+            <span id="spine-topbar-count" class="spine-topbar-count">No messages yet</span>
+            <button id="spine-topbar-latest" class="spine-topbar-latest" type="button">↑ Latest</button>
+          </div>
+
+          <div class="talk-body">
+            <div class="voice-dock">
+              <button id="new-chat-button" class="new-chat-button" type="button" title="Start a new chat -- your memories and training stay intact">↺ New chat</button>
+              <button id="mic-button" class="voice-orb-button" type="button" disabled hidden>
+                <span id="voice-orb" class="voice-orb" data-state="idle">
+                  <span class="voice-orb-halo"></span>
+                  <span class="voice-orb-glow">
+                    <span class="voice-orb-blob voice-orb-blob-a"></span>
+                    <span class="voice-orb-blob voice-orb-blob-b"></span>
+                    <span class="voice-orb-blob voice-orb-blob-c"></span>
+                  </span>
+                  <span class="voice-orb-ring"></span>
+                  <span class="voice-orb-core"></span>
+                </span>
+              </button>
+              <div id="voice-level-meter" class="voice-level-meter" hidden aria-hidden="true">
+                <span class="voice-level-bar"></span>
+                <span class="voice-level-bar"></span>
+                <span class="voice-level-bar"></span>
+                <span class="voice-level-bar"></span>
+                <span class="voice-level-bar"></span>
+              </div>
+              <div id="voice-orb-label" class="voice-orb-label">Tap the orb to talk</div>
+              <div id="voice-orb-sub" class="voice-orb-sub">Voice or type — your call</div>
+
+              <div id="voice-filmstrip" class="voice-filmstrip" aria-hidden="true">
+                <div class="voice-filmstrip-chip" data-bucket="idle">
+                  <span class="voice-filmstrip-dot"></span>
+                  <span class="voice-filmstrip-label">IDLE</span>
+                </div>
+                <div class="voice-filmstrip-chip" data-bucket="listen">
+                  <span class="voice-filmstrip-dot"></span>
+                  <span class="voice-filmstrip-label">LISTEN</span>
+                </div>
+                <div class="voice-filmstrip-chip" data-bucket="think">
+                  <span class="voice-filmstrip-dot"></span>
+                  <span class="voice-filmstrip-label">THINK</span>
+                </div>
+                <div class="voice-filmstrip-chip" data-bucket="speak">
+                  <span class="voice-filmstrip-dot"></span>
+                  <span class="voice-filmstrip-label">SPEAK</span>
+                </div>
+              </div>
+
+              <button id="conversation-toggle" class="conversation-toggle" type="button" role="switch" aria-checked="false" title="Keep the mic open after each reply, for hands-free back-and-forth">
+                <span class="conversation-toggle-track"><span class="conversation-toggle-thumb"></span></span>
+                <span class="conversation-toggle-label">Conversation mode</span>
+              </button>
+              <label class="voice-pause" for="voice-pause-slider" title="How long a pause ends your turn">
+                <span class="voice-pause-label">Pause before replying</span>
+                <input id="voice-pause-slider" class="voice-pause-slider" type="range" min="1000" max="4000" step="250" value="2000">
+                <span id="voice-pause-value" class="voice-pause-value">2.0s</span>
+              </label>
+              <p id="mic-error" class="mic-error" hidden></p>
+
+              <div class="voice-dock-footer">
+                <div class="voice-dock-footer-row">
+                  <span class="voice-dock-footer-label">TASK ·</span>
+                  <span id="rail-task-value" class="voice-dock-footer-value">Idle</span>
+                </div>
+                <div id="rail-stats-value" class="voice-dock-footer-stats">CPU — · RAM —</div>
+              </div>
+            </div>
+
+            <div class="spine-stage">
+              <span class="spine-legend spine-legend--user" aria-hidden="true"><span class="spine-legend-swatch"></span>YOU</span>
+              <span class="spine-legend spine-legend--twin" aria-hidden="true">THE TWIN<span class="spine-legend-swatch"></span></span>
+              <div id="message-list" class="message-list"></div>
+              <div class="spine-overlay">
+                <div class="spine-seam" aria-hidden="true"></div>
+                <div id="spine-ticks" class="spine-ticks" hidden></div>
+                <button
+                  id="spine-hit-column"
+                  class="spine-hit-column"
+                  type="button"
+                  aria-label="Scrub chat history"
+                  title="Drag to scrub, or use arrow keys"
+                  hidden
+                ></button>
+                <div id="spine-pearl" class="spine-pearl" aria-hidden="true" hidden></div>
+              </div>
+              <button id="new-message-badge" class="new-message-badge" type="button" hidden>↓ new message</button>
+            </div>
+          </div>
+
+          <form id="chat-form" class="chat-form">
+            <div class="chat-form-inner">
+              <input id="chat-input" type="text" placeholder="Say something… — or tap the orb to speak" autocomplete="off" disabled />
+              <button type="submit">Send</button>
+            </div>
+          </form>
+          <p id="tts-status" class="tts-status" hidden></p>
+        </section>
+      </section>
+
+      <section id="train-view" class="view" hidden>
+        <nav class="subtabs">
+          <button id="subtab-overview" class="subtab subtab--active" type="button">Overview</button>
+          <button id="subtab-memories" class="subtab" type="button">Memories</button>
+          <button id="subtab-voice" class="subtab" type="button">Voice samples</button>
+          <button id="subtab-style" class="subtab" type="button">Style</button>
+          <button id="subtab-vault" class="subtab" type="button">World knowledge</button>
+          <button id="subtab-persona" class="subtab" type="button">Persona check</button>
+          <button id="subtab-backup" class="subtab" type="button">Backup</button>
+        </nav>
+
+        <div id="overview-panel" class="overview-panel" hidden>
+          <div class="overview-hero">
+            <svg id="overview-ring" class="overview-ring" width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="46" fill="none" stroke-width="9" class="overview-ring-track" />
+              <circle
+                id="overview-ring-arc"
+                cx="60"
+                cy="60"
+                r="46"
+                fill="none"
+                stroke-width="9"
+                stroke-linecap="round"
+                class="overview-ring-arc"
+                transform="rotate(-90 60 60)"
+              />
+              <text id="overview-ring-pct" x="60" y="56" text-anchor="middle" class="overview-ring-pct">—%</text>
+              <text x="60" y="74" text-anchor="middle" class="overview-ring-caption">READY</text>
+            </svg>
+            <div class="overview-hero-copy">
+              <div class="overview-hero-kicker">YOUR TWIN</div>
+              <div id="overview-hero-title" class="overview-hero-title">Getting started</div>
+              <p id="overview-hero-desc" class="overview-hero-desc">
+                Add memories, writing samples, and voice recordings, then run a persona check to see how close the
+                twin sounds to you.
+              </p>
+            </div>
+            <div class="overview-next-step">
+              <div class="overview-hero-kicker">NEXT BEST STEP</div>
+              <div id="overview-next-step-label" class="overview-next-step-label">Add your first memory</div>
+              <button id="overview-next-step-go" class="overview-next-step-button" type="button">Go →</button>
+            </div>
+          </div>
+
+          <div class="overview-stats">
+            <div class="overview-stat overview-stat--memories">
+              <div class="overview-stat-label">MEMORIES</div>
+              <div id="overview-stat-memories-value" class="overview-stat-value">0</div>
+              <div class="overview-stat-caption">experiences &amp; facts</div>
+              <div class="overview-stat-bar"><div id="overview-stat-memories-bar" class="overview-stat-bar-fill"></div></div>
+            </div>
+            <div class="overview-stat overview-stat--style">
+              <div class="overview-stat-label">STYLE</div>
+              <div id="overview-stat-style-value" class="overview-stat-value">0</div>
+              <div class="overview-stat-caption">writing examples</div>
+              <div class="overview-stat-bar"><div id="overview-stat-style-bar" class="overview-stat-bar-fill"></div></div>
+            </div>
+            <div class="overview-stat overview-stat--voice">
+              <div class="overview-stat-label">VOICE</div>
+              <div class="overview-stat-value"><span id="overview-stat-voice-value">0</span><span class="overview-stat-value-of"> / <span id="overview-stat-voice-total">0</span></span></div>
+              <div class="overview-stat-caption">samples recorded</div>
+              <div class="overview-stat-bar"><div id="overview-stat-voice-bar" class="overview-stat-bar-fill"></div></div>
+            </div>
+            <div class="overview-stat overview-stat--persona">
+              <div class="overview-stat-label">PERSONA WIN-RATE</div>
+              <div id="overview-stat-persona-value" class="overview-stat-value">—%</div>
+              <div id="overview-stat-persona-caption" class="overview-stat-caption">no checks yet</div>
+              <div class="overview-stat-bar"><div id="overview-stat-persona-bar" class="overview-stat-bar-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="overview-flow">
+            <div class="overview-flow-kicker">HOW TRAINING FLOWS</div>
+            <div class="overview-flow-row">
+              <div class="overview-flow-step">
+                <div class="overview-flow-step-title">Memories · Style · Voice</div>
+                <div class="overview-flow-step-caption">the inputs you add</div>
+              </div>
+              <span class="overview-flow-arrow">→</span>
+              <div class="overview-flow-step">
+                <div class="overview-flow-step-title">Every reply</div>
+                <div class="overview-flow-step-caption">retrieved &amp; voiced</div>
+              </div>
+              <span class="overview-flow-arrow">→</span>
+              <div class="overview-flow-step overview-flow-step--highlight">
+                <div class="overview-flow-step-title">Persona check</div>
+                <div class="overview-flow-step-caption">the scoreboard</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="train-panel" class="train-panel" hidden>
+          <form id="memory-form" class="memory-form">
+            <p class="tab-intro">
+              Add anything about your life — experiences, opinions, facts, people. In Talk mode the
+              twin automatically pulls in the memories most relevant to each question you ask.
+            </p>
+            <textarea
+              id="memory-content"
+              placeholder="A memory, experience, or detail about your life…"
+              required
+            ></textarea>
+            <div class="memory-form-row">
+              <input id="memory-topic" type="text" placeholder="Topic (optional)" />
+              <input id="memory-occurred-at" type="text" placeholder="When (optional)" />
+            </div>
+            <div class="memory-form-actions">
+              <button type="submit" id="memory-submit">Add memory</button>
+              <button type="button" id="memory-cancel" hidden>Cancel edit</button>
+            </div>
+            <p id="memory-form-error" class="memory-form-error" hidden></p>
+          </form>
+
+          <div class="memory-browser">
+            <div class="memory-browser-toolbar">
+              <input id="memory-search" type="text" placeholder="Search memories…" />
+              <div class="memory-io-actions">
+                <button type="button" id="memory-export" class="btn-secondary"
+                  >Export as JSON<span class="btn-loading-indicator" aria-hidden="true"
+                    ><span class="symm-loader-bars"
+                      ><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span
+                      ><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span
+                      ><span class="symm-loader-bar"></span></span
+                  ></span></button
+                >
+                <button type="button" id="memory-import" class="btn-secondary"
+                  >Import from JSON<span class="btn-loading-indicator" aria-hidden="true"
+                    ><span class="symm-loader-bars"
+                      ><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span
+                      ><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span
+                      ><span class="symm-loader-bar"></span></span
+                  ></span></button
+                >
+                <input id="memory-import-file" type="file" accept=".json,application/json" hidden />
+              </div>
+            </div>
+            <p id="memory-io-status" class="memory-io-status" hidden></p>
+            <p id="memory-io-error" class="memory-form-error" hidden></p>
+            <div id="memory-list" class="memory-list"></div>
+          </div>
+        </div>
+
+        <div id="voice-samples-panel" class="voice-samples-panel" hidden>
+          <div class="voice-samples-header">
+            <p class="voice-samples-intro">
+              Read each prompt aloud and record it — the more you record, the closer the clone sounds.
+              You don't need to do anything else afterward: once a sample is saved it's used
+              automatically. In <strong>Talk</strong> mode, click the 🔊 on any reply to hear it in your
+              voice, and replies to questions you ask by microphone play back on their own. Heads up: the
+              very first playback downloads the voice model (~1.8&nbsp;GB), so it's slow once, then fast.
+              For the best clone, record somewhere quiet (no fan/AC hum, no echo-y room), keep the mic at
+              a consistent distance, and speak at your normal, natural pace rather than a slow reading
+              voice.
+            </p>
+            <div class="voice-samples-count">
+              <span id="voice-samples-count-value" class="voice-samples-count-value">0</span><span class="voice-samples-count-of"> / <span id="voice-samples-count-total">0</span></span>
+              <div class="voice-samples-count-caption">samples</div>
+            </div>
+            <button id="voice-samples-reset" class="voice-samples-reset" type="button" title="Delete all recorded samples and start over">Reset all samples</button>
+          </div>
+          <div id="voice-prompt-list" class="voice-prompt-list"></div>
+          <p id="voice-samples-error" class="mic-error" hidden></p>
+        </div>
+
+        <div id="style-panel" class="style-panel" hidden>
+          <p class="tab-intro">
+            Teach the twin how you write. <strong>Raw examples</strong> → an optional
+            <strong>distilled guide</strong> → used in every reply.
+          </p>
+
+          <nav class="style-tabs">
+            <button id="style-tab-examples" class="style-tab style-tab--active" type="button">Examples</button>
+            <button id="style-tab-guide" class="style-tab" type="button">Guide</button>
+            <button id="style-tab-import" class="style-tab" type="button">Import</button>
+          </nav>
+
+          <div id="style-tabpanel-examples" class="style-tabpanel">
+            <div class="style-toolbar">
+              <input id="style-search" type="text" placeholder="Search examples…" />
+              <button id="style-type-filter" type="button" title="Cycle type filter">All types</button>
+              <button id="style-sort" type="button" title="Toggle sort order">Newest first ↓</button>
+              <button id="style-add" type="button">+ Add example</button>
+            </div>
+            <div id="style-legacy-notice" class="style-legacy-notice" hidden>
+              <p class="style-legacy-notice-text">
+                <span id="style-legacy-notice-count">0</span> example(s) here were saved from a
+                Persona check answer, before this app started requiring your own writing instead
+                of the model's. They may sound more like the twin than like you.
+              </p>
+              <button type="button" id="style-legacy-notice-remove">Remove them</button>
+            </div>
+            <p id="style-list-error" class="memory-form-error" hidden></p>
+            <div class="style-row style-row--head" aria-hidden="true">
+              <span>TYPE</span><span>SUBJECT</span><span>DATE</span>
+            </div>
+            <div id="style-list" class="style-list"></div>
+          </div>
+
+          <div id="style-tabpanel-guide" class="style-tabpanel" hidden>
+            <div class="style-pipeline">
+              <span id="style-pipeline-raw" class="style-pipeline-step style-pipeline-step--active">0 raw examples</span>
+              <span class="style-pipeline-arrow">→</span>
+              <span id="style-pipeline-guide" class="style-pipeline-step style-pipeline-step--pending">No distilled guide yet</span>
+              <span class="style-pipeline-arrow">→</span>
+              <span class="style-pipeline-step">Shapes every reply</span>
+            </div>
+
+            <div id="style-guide-box" class="style-guide-box">
+              <div class="style-guide-header">
+                <span>
+                  Distilled style guide
+                  <button
+                    type="button"
+                    class="info-tip"
+                    aria-expanded="false"
+                    aria-controls="style-guide-help"
+                    aria-label="What's a distilled style guide?"
+                    >ⓘ</button
+                  >
+                </span>
+                <div class="style-guide-actions">
+                  <button id="style-distill-local" type="button">Perform local distill<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span></button>
+                  <button id="style-distill" type="button">Distill with OpenRouter<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span></button>
+                  <button id="style-guide-clear" type="button" hidden>Clear</button>
+                </div>
+              </div>
+              <p id="style-guide-help" class="info-tip-text" hidden>
+                “Perform local distill” uses your configured Ollama model on this machine; Ollama
+                must be running and that model must be available. “Distill with OpenRouter”
+                sends all your writing samples and Q&amp;A examples to OpenRouter as a one-time
+                paid cloud call. Either option condenses the corpus into one compact style guide.
+                Re-run it after adding examples; delete the guide to fall back to raw examples.
+              </p>
+              <p id="style-guide-freshness" class="style-guide-freshness" hidden>
+                <span id="style-guide-status-dot" class="style-guide-status-dot" aria-hidden="true"></span>
+                <span id="style-guide-status-label"></span>
+              </p>
+              <p id="style-guide-content" class="style-guide-content">None yet — using raw examples below.</p>
+              <p id="style-distill-error" class="memory-form-error" hidden></p>
+            </div>
+
+            <div class="style-info-card">
+              <p class="tab-intro">
+                Distillation with OpenRouter sends your corpus to a cloud model as a one-time paid
+                call -- add an API key once to enable it.
+              </p>
+              <button id="style-openrouter-configure" type="button">Configure OpenRouter</button>
+            </div>
+          </div>
+
+          <div id="style-tabpanel-import" class="style-tabpanel" hidden>
+            <p class="tab-intro">
+              Import a chat export and your own messages become style examples automatically.
+              Big imports are capped at 100 per file -- run a distillation option afterward so chat
+              prompts stay compact.
+            </p>
+            <div class="style-import-cards">
+              <button id="style-import-whatsapp-card" class="style-import-card" type="button">
+                <span class="style-import-card-title">WhatsApp</span>
+                <span class="style-import-card-desc">
+                  Export a chat (without media) as .txt or .zip, pick which participant is you.
+                </span>
+              </button>
+              <button id="style-import-signal-card" class="style-import-card" type="button">
+                <span class="style-import-card-title">Signal</span>
+                <span class="style-import-card-desc">
+                  Export one .txt per conversation from Signal Desktop, select as many as you like.
+                </span>
+              </button>
+            </div>
+            <div class="style-import-history-box">
+              <h3 class="style-import-history-title">Recent imports</h3>
+              <ul id="style-import-history" class="style-import-history-list"></ul>
+            </div>
+          </div>
+
+          <div
+            id="style-detail"
+            class="style-detail"
+            hidden
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="style-detail-type-tag"
+          >
+            <div id="style-detail-backdrop" class="style-detail-backdrop"></div>
+            <div id="style-detail-panel" class="style-detail-panel">
+              <div class="style-detail-header">
+                <span id="style-detail-type-tag" class="style-detail-type-tag">Writing sample</span>
+                <span id="style-detail-source-tag" class="style-detail-source-tag" hidden>WHATSAPP IMPORT</span>
+                <span id="style-detail-date" class="style-detail-date">New example</span>
+                <button id="style-detail-close" class="style-detail-close" type="button" aria-label="Close">×</button>
+              </div>
+
+              <div id="style-detail-kind-row" class="style-kind-row">
+                <label>
+                  <input type="radio" name="style-detail-kind" value="text" checked /> Writing sample
+                  <button
+                    type="button"
+                    class="info-tip"
+                    aria-expanded="false"
+                    aria-controls="style-kind-text-help"
+                    aria-label="What's a writing sample?"
+                    >ⓘ</button
+                  >
+                </label>
+                <label>
+                  <input type="radio" name="style-detail-kind" value="qa" /> Q&amp;A example
+                  <button
+                    type="button"
+                    class="info-tip"
+                    aria-expanded="false"
+                    aria-controls="style-kind-qa-help"
+                    aria-label="What's a Q&A example?"
+                    >ⓘ</button
+                  >
+                </label>
+              </div>
+              <p id="style-kind-text-help" class="info-tip-text" hidden>
+                Paste something you actually wrote — an email, a message, a note. It's used as-is
+                so replies can pick up your vocabulary, sentence length, and tone. Add several for
+                a stronger signal.
+              </p>
+              <p id="style-kind-qa-help" class="info-tip-text" hidden>
+                Give a specific question plus how you'd actually answer it. Better than a writing
+                sample for capturing how you handle a particular topic or tone, not just your
+                writing style in general.
+              </p>
+
+              <div id="style-detail-question-field" class="style-detail-question-field" hidden>
+                <label for="style-detail-question">Question</label>
+                <input
+                  id="style-detail-question"
+                  type="text"
+                  placeholder="Question (only for Q&amp;A examples)"
+                />
+              </div>
+
+              <label id="style-detail-body-label" class="style-detail-body-label" for="style-detail-body"
+                >Writing sample</label
+              >
+              <textarea
+                id="style-detail-body"
+                placeholder="Paste something you wrote, or write how you'd answer…"
+              ></textarea>
+              <p id="style-detail-error" class="memory-form-error" hidden></p>
+
+              <div class="style-detail-actions">
+                <button id="style-detail-delete" class="style-detail-delete" type="button" hidden>Delete</button>
+                <div class="style-detail-actions-right">
+                  <button id="style-detail-cancel" type="button">Cancel</button>
+                  <button id="style-detail-save" type="button"
+                    >Save<span class="btn-loading-indicator" aria-hidden="true"
+                      ><span class="symm-loader-bars"
+                        ><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span
+                        ><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span
+                        ><span class="symm-loader-bar"></span></span
+                    ></span
+                  ></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="vault-panel" class="vault-panel" hidden>
+          <p class="tab-intro">
+            Give your twin world knowledge to draw on — history books, timelines, reference notes.
+            The twin already knows general history from its base model; this library is for the
+            specific material you want it to be precise about (especially recent years). Upload
+            <strong>.md</strong>, <strong>.txt</strong>, or <strong>.epub</strong> files — they're
+            chunked, embedded, and pulled in automatically when a question touches world events,
+            while purely personal questions keep using only your memories. Big books can take a few
+            minutes to index.
+          </p>
+          <form id="vault-form" class="vault-form">
+            <input id="vault-file" type="file" accept=".md,.txt,.epub" />
+            <button id="vault-upload" type="submit" disabled>Add to library</button>
+          </form>
+          <p id="vault-status" class="vault-status" hidden></p>
+          <p id="vault-error" class="memory-form-error" hidden></p>
+          <div id="vault-list" class="memory-list"></div>
+        </div>
+
+        <div id="persona-panel" class="persona-panel" hidden>
+          <p class="tab-intro">
+            Check which setup actually sounds like you. Both answers below come from your trained
+            twin — just assembled two different ways — so ask a test question and pick the one
+            that sounds more like you. The leaderboard shows which setup is winning, and you can
+            keep adding memories and style examples until your default setup wins consistently.
+          </p>
+
+          <div class="persona-scoreboard">
+            <div class="persona-scoreboard-headline">
+              <div id="persona-winpct" class="persona-winpct">—%</div>
+              <div id="persona-winpct-caption" class="persona-winpct-caption">your default setup wins</div>
+            </div>
+            <div class="persona-scoreboard-arms">
+              <div class="persona-scoreboard-arms-label">
+                SETUPS TESTED
+                <button
+                  type="button"
+                  class="info-tip"
+                  aria-expanded="false"
+                  aria-controls="persona-arms-help"
+                  aria-label="What are these setups?"
+                  >ⓘ</button
+                >
+              </div>
+              <table id="persona-arm-table" class="persona-arm-table">
+                <tbody id="persona-arm-table-body"></tbody>
+              </table>
+            </div>
+            <div class="persona-scoreboard-chart">
+              <div class="persona-scoreboard-chart-label">LAST 8 CHECKS</div>
+              <div id="persona-recent-chart" class="persona-recent-chart"></div>
+            </div>
+          </div>
+          <p id="persona-arms-help" class="info-tip-text" hidden>
+            Each check pits your default setup (whatever live chat actually uses — a distilled
+            style guide plus matched examples, when you have both) against a challenger setup that
+            leaves one of those pieces out. Neither answer is a generic AI — both are your twin,
+            just assembled differently — so a genuine win here means something.
+          </p>
+          <p id="persona-summary-text" class="persona-summary-fallback" hidden>No comparisons yet.</p>
+
+          <form id="persona-form" class="persona-form">
+            <input id="persona-prompt" type="text" placeholder="Ask a test question…" required />
+            <button type="submit" id="persona-compare">Compare<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span></button>
+          </form>
+          <p id="persona-compare-status" class="tts-status" hidden></p>
+          <p id="persona-error" class="memory-form-error" hidden></p>
+
+          <!-- Shown the moment Compare is clicked -- while both answers are
+               still generating -- so anything written here is provably
+               written before either answer exists on screen. Style examples
+               must be human-authored (see main.py's create_style_entry
+               invariant comment); starting from the model's own wording and
+               editing it isn't a strong enough guarantee, since the winning
+               answer is by definition the model's most convincing
+               imitation, and edits to it tend to be light. -->
+          <div id="persona-compose" class="persona-compose" hidden>
+            <p class="persona-compose-label">
+              While that generates — how would you actually answer this? Optional, but writing it
+              now, before you see either answer, is what keeps a saved example genuinely yours.
+            </p>
+            <textarea
+              id="persona-compose-body"
+              class="persona-compose-body"
+              placeholder="Your own answer… (optional)"
+            ></textarea>
+            <p id="persona-compose-error" class="memory-form-error" hidden></p>
+            <div class="persona-compose-actions">
+              <button type="button" id="persona-reveal-answers" disabled
+                >Show the two answers<span class="btn-loading-indicator" aria-hidden="true"
+                  ><span class="symm-loader-bars"
+                    ><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span
+                    ><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span
+                    ><span class="symm-loader-bar"></span></span
+                ></span
+              ></button>
+              <button type="button" id="persona-compose-save" hidden
+                >Save as style example<span class="btn-loading-indicator" aria-hidden="true"
+                  ><span class="symm-loader-bars"
+                    ><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span
+                    ><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span
+                    ><span class="symm-loader-bar"></span></span
+                ></span
+              ></button>
+              <button type="button" id="persona-compose-dismiss" hidden>Not now</button>
+            </div>
+            <p id="persona-compose-saved" class="persona-compose-saved" hidden>Saved to your style corpus.</p>
+          </div>
+
+          <div id="persona-answers" class="persona-answers" hidden>
+            <div class="persona-answer">
+              <h3>Answer A</h3>
+              <p id="persona-answer-a"></p>
+              <button type="button" id="persona-choose-a">This sounds like me</button>
+            </div>
+            <div class="persona-answer">
+              <h3>Answer B</h3>
+              <p id="persona-answer-b"></p>
+              <button type="button" id="persona-choose-b">This sounds like me</button>
+            </div>
+          </div>
+          <button type="button" id="persona-choose-tie" hidden>Neither / tie</button>
+          <p id="persona-reveal" class="persona-reveal" hidden></p>
+        </div>
+
+        <div id="backup-panel" class="backup-panel" hidden>
+          <div class="backup-privacy-banner">
+            <span class="backup-privacy-dot"></span>
+            <p>
+              Stored <strong>only on this machine</strong>, sent only to your own Nextcloud. This uploads a
+              snapshot — there's no automatic restore yet.
+            </p>
+          </div>
+
+          <form id="backup-config-form" class="memory-form backup-config-form">
+            <input id="backup-url" type="text" placeholder="Nextcloud URL (e.g. https://cloud.example.com)" required />
+            <input id="backup-username" type="text" placeholder="Username" required />
+            <div class="backup-password-row">
+              <input id="backup-password" type="password" placeholder="App password" />
+              <button
+                type="button"
+                class="info-tip"
+                aria-expanded="false"
+                aria-controls="backup-password-help"
+                aria-label="What's an app password?"
+                >ⓘ</button
+              >
+            </div>
+            <p class="backup-password-hint">Use an app password, not your login password.</p>
+            <p id="backup-password-help" class="info-tip-text" hidden>
+              Use a Nextcloud <strong>app password</strong>, not your regular login password —
+              especially if two-factor authentication is enabled, in which case the account
+              password won't work at all. Generate one in the Nextcloud web UI: Settings →
+              Security → "Devices &amp; Sessions" → "Create new app password". Paste the
+              generated password here.
+            </p>
+            <div class="memory-form-actions">
+              <button type="submit" id="backup-save">Save settings<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span></button>
+            </div>
+            <p id="backup-config-error" class="memory-form-error" hidden></p>
+          </form>
+
+          <div class="backup-run-box">
+            <div class="backup-run-actions">
+              <button type="button" id="backup-run">Back up now</button>
+              <button type="button" id="backup-download" class="btn-secondary">Download backup<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span></button>
+            </div>
+            <p id="backup-status" class="backup-status">Never backed up yet.</p>
+            <p id="backup-error" class="memory-form-error" hidden></p>
+            <p id="backup-download-error" class="memory-form-error" hidden></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="tools-view" class="view tools-view" hidden>
+        <p class="tab-intro">
+          Tools let the twin look something up instead of guessing at it. It decides on its own
+          when to reach for one, and says so under the reply when it does.
+        </p>
+
+        <div id="tools-model-warning" class="tools-warning" hidden>
+          <strong>The current model can't use tools.</strong>
+          <span id="tools-model-warning-detail"></span>
+        </div>
+
+        <div class="tools-card">
+          <div class="tools-card-head">
+            <label class="tools-toggle">
+              <input type="checkbox" id="tools-clock-enabled" />
+              <span class="tools-card-title">Date &amp; time</span>
+            </label>
+            <span class="tools-card-badge">On this machine</span>
+          </div>
+          <p class="tab-intro">
+            Lets the twin work out what day it is and how long until something. Never leaves your
+            machine.
+          </p>
+          <div class="memory-form-row tools-timezone-row">
+            <label for="tools-timezone" class="tools-field-label">Timezone</label>
+            <input id="tools-timezone" type="text" placeholder="System default (e.g. Europe/Vienna)" />
+            <button type="button" id="tools-timezone-save">Save<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span></button>
+          </div>
+          <p id="tools-clock-preview" class="tab-intro tools-preview"></p>
+        </div>
+
+        <div class="tools-card">
+          <div class="tools-card-head">
+            <label class="tools-toggle">
+              <input type="checkbox" id="tools-weather-enabled" />
+              <span class="tools-card-title">Weather</span>
+            </label>
+            <span class="tools-card-badge tools-card-badge--network">Reaches the internet</span>
+          </div>
+          <p class="tab-intro">
+            Current conditions and today's high/low, via Open-Meteo (no account, no key needed).
+            Shows up in the footer's internet-access list when it actually fetches — asking about
+            the same place again within a few minutes is answered from cache and stays offline.
+          </p>
+          <div id="tools-weather-locations" class="tools-weather-locations"></div>
+          <div class="tools-weather-actions">
+            <button type="button" id="tools-weather-add" class="btn-secondary">Add a place</button>
+            <button type="button" id="tools-weather-save">Save<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span></button>
+          </div>
+          <p id="tools-weather-error" class="memory-form-error" hidden></p>
+        </div>
+
+        <div class="tools-card">
+          <div class="tools-card-head">
+            <label class="tools-toggle">
+              <input type="checkbox" id="tools-calendar-enabled" />
+              <span class="tools-card-title">Calendar</span>
+            </label>
+            <span class="tools-card-badge tools-card-badge--network">Reaches the internet</span>
+          </div>
+          <p class="tab-intro">
+            Lets the twin check what's coming up and add events to your Google Calendar.
+          </p>
+          <label class="tools-toggle tools-calendar-confirm-row">
+            <input type="checkbox" id="tools-calendar-confirm" />
+            <span>Confirm before creating an event</span>
+          </label>
+          <p class="tab-intro tools-preview">
+            On by default: a new event sits as a draft until you approve it in the Talk tab.
+            Turn this off once you trust it, and the twin creates events straight away.
+          </p>
+          <div class="tools-calendar-connection">
+            <span id="tools-calendar-status" class="tools-calendar-status">Checking…</span>
+            <button type="button" id="tools-calendar-manage" class="btn-secondary">Manage connection</button>
+          </div>
+          <p id="tools-calendar-error" class="memory-form-error" hidden></p>
+        </div>
+
+        <p id="tools-error" class="memory-form-error" hidden></p>
+      </section>
+
+      <section id="system-view" class="view system-view" hidden>
+        <p class="tab-intro">
+          Everything Mimoid runs to power your twin — what each piece is, and whether it runs on this
+          machine or (for one optional feature) briefly reaches out to the cloud.
+        </p>
+        <form id="system-owner-name-form" class="memory-form system-owner-name-form">
+          <label for="system-owner-name-input" class="system-owner-name-label">Your name</label>
+          <div class="memory-form-row system-owner-name-row">
+            <input id="system-owner-name-input" type="text" placeholder="Your first name" required />
+            <button type="submit" id="system-owner-name-save">Save<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span></button>
+          </div>
+          <p class="tab-intro system-owner-name-hint">What the twin calls itself, and how it's addressed throughout the app.</p>
+          <p id="system-owner-name-error" class="memory-form-error" hidden></p>
+        </form>
+        <div id="system-card-list" class="system-card-list"></div>
+        <p id="system-info-error" class="memory-form-error" hidden></p>
+      </section>
+
+      <section id="architecture-view" class="view architecture-view" hidden>
+        <p class="tab-intro">
+          How Mimoid fits together, and what happens when someone talks to the twin.
+        </p>
+        <div id="architecture-toolbar" class="architecture-toolbar" hidden>
+          <button id="architecture-zoom-out" class="architecture-zoom-button" type="button" aria-label="Zoom out">−</button>
+          <span id="architecture-zoom-level" class="architecture-zoom-level">100%</span>
+          <button id="architecture-zoom-in" class="architecture-zoom-button" type="button" aria-label="Zoom in">+</button>
+          <button id="architecture-zoom-reset" class="architecture-zoom-reset" type="button">Reset zoom</button>
+        </div>
+        <div id="architecture-diagram" class="architecture-diagram" role="img" aria-label="Mimoid architecture diagram"></div>
+        <p id="architecture-error" class="memory-form-error" hidden></p>
+      </section>
+    </main>
+
+    <footer class="system-bar">
+      <span class="system-bar-task">
+        <span class="system-bar-label">TASK</span>
+        <span id="sysbar-activity" class="system-bar-task-value">—</span>
+      </span>
+      <button
+        id="network-indicator"
+        class="network-indicator"
+        type="button"
+        aria-expanded="false"
+        title="No internet access right now"
+      >
+        <span id="network-dot" class="network-dot"></span>
+        <span class="system-bar-label">NET</span>
+        <span id="network-current-label" class="system-bar-task-value">Idle</span>
+      </button>
+      <button id="sysbar-summary" class="system-bar-summary" type="button" aria-expanded="false">
+        <span id="sysbar-summary-text">CPU — · RAM —</span> · details ⌄
+      </button>
+    </footer>
+
+    <div id="network-popover" class="status-popover network-popover" hidden>
+      <div class="status-popover-heading">Internet access</div>
+      <p class="network-popover-note">
+        Mimoid is offline-first. This lists every time the app reached
+        beyond your machine — OpenRouter, Nextcloud backup, Ollama model
+        downloads. Local chat with Ollama never appears here.
+      </p>
+      <ul id="network-history-list" class="network-history-list"></ul>
+    </div>
+
+    <dialog id="openrouter-modal" class="openrouter-modal">
+      <form id="openrouter-modal-form" class="memory-form">
+        <h3>Connect OpenRouter</h3>
+        <p class="tab-intro">
+          Used only for style-guide distillation — a one-time paid cloud call per distill.
+          Stored only on this machine.
+        </p>
+        <input id="openrouter-api-key" type="password" placeholder="OpenRouter API key" required />
+        <p id="openrouter-modal-error" class="memory-form-error" hidden></p>
+        <div class="memory-form-actions">
+          <button type="button" id="openrouter-modal-cancel">Cancel</button>
+          <button type="submit" id="openrouter-modal-save">Save<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span></button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="google-calendar-modal" class="openrouter-modal">
+      <h3>Connect Google Calendar</h3>
+      <p class="tab-intro">
+        Requires a Google Cloud "Desktop app" OAuth client (see README) — client ID and secret
+        stay on this machine. The consent screen opens in your browser; nothing is created on your
+        calendar until the twin drafts an event and you confirm it.
+      </p>
+
+      <form id="google-credentials-form" class="memory-form">
+        <input id="google-client-id" type="text" placeholder="Client ID" autocomplete="off" required />
+        <input id="google-client-secret" type="password" placeholder="Client secret" required />
+        <p id="google-credentials-error" class="memory-form-error" hidden></p>
+        <div class="memory-form-actions">
+          <button type="submit">Save credentials<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span></button>
+        </div>
+      </form>
+
+      <div class="google-connect-row">
+        <span id="google-status-text" class="tools-calendar-status">Checking…</span>
+        <button type="button" id="google-connect-button" hidden>Connect with Google</button>
+        <button type="button" id="google-disconnect-button" class="btn-secondary" hidden>Disconnect</button>
+      </div>
+      <p id="google-connect-error" class="memory-form-error" hidden></p>
+
+      <div class="memory-form-actions">
+        <button type="button" id="google-modal-close">Close</button>
+      </div>
+    </dialog>
+
+    <dialog id="style-whatsapp-modal" class="style-import-modal">
+      <h3>Import from WhatsApp</h3>
+      <p class="tab-intro">
+        In WhatsApp, open a chat → Export chat → <strong>Without media</strong>, and share the
+        <code>.txt</code> (or <code>.zip</code>) file to this machine. Upload it here, pick which
+        participant is you, and your messages become style examples.
+      </p>
+      <input id="whatsapp-file" type="file" accept=".txt,.zip" />
+      <div id="whatsapp-participants" class="whatsapp-participants" hidden></div>
+      <button id="whatsapp-import-run" type="button" hidden>Import my messages</button>
+      <p id="whatsapp-status" class="backup-status" hidden></p>
+      <p id="whatsapp-error" class="memory-form-error" hidden></p>
+      <div class="style-import-modal-actions">
+        <button id="whatsapp-remove-imported" type="button" hidden>Remove imported entries</button>
+        <button id="style-whatsapp-modal-close" type="button">Close</button>
+      </div>
+    </dialog>
+
+    <dialog id="style-signal-modal" class="style-import-modal">
+      <h3>Import from Signal</h3>
+      <p class="tab-intro">
+        In Signal Desktop, export a chat as a <code>.txt</code> file (one file per conversation)
+        and select as many as you like below. Signal already marks which messages are yours, so
+        there's no participant to pick — your messages become style examples right away.
+      </p>
+      <input id="signal-file" type="file" accept=".txt" multiple />
+      <button id="signal-import-run" type="button" hidden>Import my messages</button>
+      <p id="signal-status" class="backup-status" hidden></p>
+      <p id="signal-error" class="memory-form-error" hidden></p>
+      <div class="style-import-modal-actions">
+        <button id="signal-remove-imported" type="button" hidden>Remove imported entries</button>
+        <button id="style-signal-modal-close" type="button">Close</button>
+      </div>
+    </dialog>
+
+    <!-- Global error modal: a single shared mount point above all tabs (see
+         errorModal.ts). Any part of the app can trigger it via showError();
+         a new error while one is open replaces this same card in place
+         rather than stacking. -->
+    <div id="error-modal-backdrop" class="error-modal-backdrop" hidden>
+      <div
+        id="error-modal"
+        class="error-modal"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="error-modal-title"
+        aria-describedby="error-modal-body"
+      >
+        <div class="error-modal-bloom" aria-hidden="true"></div>
+        <div class="error-modal-content">
+          <div class="error-modal-sigil" aria-hidden="true">
+            <span class="error-modal-sigil-ring"></span>
+            <span class="error-modal-sigil-core"></span>
+          </div>
+          <div class="error-modal-kicker">A DISTURBANCE</div>
+          <h2 id="error-modal-title" class="error-modal-title"></h2>
+          <p id="error-modal-body" class="error-modal-message"></p>
+          <div class="error-modal-actions">
+            <button id="error-modal-dismiss" class="error-modal-dismiss" type="button">Dismiss</button>
+            <button id="error-modal-primary" class="error-modal-primary" type="button" hidden></button>
+          </div>
+          <div class="error-modal-footer">
+            <span id="error-modal-code" class="error-modal-code"></span>
+            <button
+              id="error-modal-details-toggle"
+              class="error-modal-details-toggle"
+              type="button"
+              aria-expanded="false"
+              hidden
+            >
+              Details
+            </button>
+          </div>
+          <pre id="error-modal-technical" class="error-modal-technical" hidden></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- First-run "what should it call you?" gate (see onboarding.ts). Shown
+         once, before Talk/Train can be used at all -- the persona's system
+         prompt needs a real name, not a placeholder. No Escape-to-dismiss and
+         no backdrop-click-to-close: unlike the error modal, this step isn't
+         optional. -->
+    <div id="name-onboarding-backdrop" class="name-onboarding-backdrop" hidden>
+      <div
+        id="name-onboarding-card"
+        class="name-onboarding-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="name-onboarding-title"
+      >
+        <div class="name-onboarding-orb voice-orb" aria-hidden="true">
+          <span class="voice-orb-halo"></span>
+          <span class="voice-orb-glow">
+            <span class="voice-orb-blob voice-orb-blob-a"></span>
+            <span class="voice-orb-blob voice-orb-blob-b"></span>
+          </span>
+          <span class="voice-orb-core"></span>
+        </div>
+        <div class="name-onboarding-kicker">FIRST CONTACT</div>
+        <h2 id="name-onboarding-title" class="name-onboarding-title">
+          Before the ocean can reflect you, it needs a name to hold
+        </h2>
+        <form id="name-onboarding-form" class="name-onboarding-form">
+          <label class="name-onboarding-label" for="name-onboarding-input">WHAT SHOULD IT CALL YOU?</label>
+          <input
+            id="name-onboarding-input"
+            class="name-onboarding-input"
+            type="text"
+            maxlength="60"
+            autocomplete="given-name"
+            required
+          />
+          <p class="name-onboarding-helper">Just a first name is enough — you can change this later in System.</p>
+          <p id="name-onboarding-error" class="name-onboarding-error" hidden></p>
+          <button id="name-onboarding-submit" type="submit" class="name-onboarding-submit">
+            Begin<span class="btn-loading-indicator" aria-hidden="true"><span class="symm-loader-bars"><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span><span class="symm-loader-bar"></span></span></span>
+          </button>
+        </form>
+        <p class="name-onboarding-footer">Stored only on this device — never sent anywhere</p>
+      </div>
+    </div>
+  </body>
+</html>

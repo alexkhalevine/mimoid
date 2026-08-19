@@ -1,0 +1,4542 @@
+/* ==========================================================================
+   Fonts (self-hosted -- offline-first, no CDN at runtime; each family's
+   OFL license is in public/fonts/, see public/fonts/NOTICE.md)
+   ========================================================================== */
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/space-grotesk-variable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/spectral-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/spectral-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/spectral-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/spectral-italic-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Spectral";
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/spectral-italic-500.woff2") format("woff2");
+}
+
+/* ==========================================================================
+   Design tokens (dark-only for now -- see docs/design-brief.md.
+   Light theme is deferred; :root IS the dark palette, not gated behind
+   prefers-color-scheme.)
+   ========================================================================== */
+:root {
+  --font-sans: "Space Grotesk", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-serif: "Spectral", Georgia, serif;
+
+  --bg-app: #08090c;
+  --bg-sunken: #060709;
+  --bg-raised: #0c0e13;
+  --bg-surface: #0f1219;
+  --bg-surface-alt: #0f1420;
+  --bg-surface-2: #141826;
+
+  --border-subtle: #171a22;
+  --border: #1b2333;
+  --border-strong: #232a3a;
+  --border-dashed: #2a3550;
+
+  --text-primary: #f2f0ff;
+  --text-secondary: #dce3e9;
+  --text-tertiary: #8a93a8;
+  --text-muted: #6b7488;
+  --text-label: #565f70;
+
+  --accent-violet: #7b5cff;
+  --accent-violet-2: #6a4ff0;
+  --accent-violet-soft: #a996ff;
+  --accent-teal: #3ad0c0;
+  --accent-teal-2: #5ee0d2;
+  --accent-amber: #f4bf4f;
+  --accent-success: #61c554;
+  --accent-danger: #ec6a5e;
+  --accent-danger-muted: #c98a82;
+
+  /* The error modal's own amber -- deliberately a different, more muted
+     shade than --accent-amber (used for network-egress activity) so an
+     error is never visually confused with that unrelated indicator. */
+  --error-accent: #e0a96d;
+  --error-card-bg: #0e0d10;
+  --error-card-border: #3a2a1a;
+  --error-body-text: #a89a8a;
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  /* Motion tokens (Phase 2 interaction spec: instant/quick/base/slow for UI,
+     loop-breathe for ambient states, number-roll for count-up animations). */
+  --t-instant: 0ms;
+  --t-quick: 120ms;
+  --t-base: 180ms;
+  --t-slow: 240ms;
+  --t-loop-breathe-min: 1.4s;
+  --t-loop-breathe-max: 5s;
+  --t-number-roll: 400ms;
+  --ease-ui: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-loop: ease-in-out;
+  --ease-exit: ease-in;
+
+  /* Width tokens (responsive layout): shared caps so large/maximized windows
+     use more space without stretching into unreadably long lines. Floors are
+     close to today's per-panel values so default-size windows look
+     ~unchanged; the vw term only pushes past the floor on genuinely large
+     windows. */
+  --width-reading: clamp(820px, 56vw, 980px);
+  --width-dashboard: clamp(900px, 66vw, 1180px);
+  --width-voice-orb: clamp(104px, 9vw, 148px);
+  --width-talk-rail: 236px;
+
+  color-scheme: dark;
+  color: var(--text-secondary);
+  background-color: var(--bg-app);
+
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Author `display` rules below (e.g. `.view { display: flex }`) would
+   otherwise outrank the UA stylesheet's `[hidden] { display: none }`. */
+[hidden] {
+  display: none !important;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button {
+  font-family: inherit;
+}
+
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* Reusable "this button kicked off real async work" state -- distinct from
+   plain :disabled, which also covers things like an already-voted persona
+   button that isn't loading anything. Text stays laid out (only its color
+   goes transparent) so the button doesn't resize when the spinner appears. */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Mimoid Loader -- five bars folding in a violet->teal wave (replaces
+   the old spinning-ring pattern everywhere a loading state is shown: the
+   button loading state below, and the setup screen's wait indicator).
+   Base size is the small, inline-with-text scale; --md is the larger
+   standalone scale used on its own (not inside a button).
+   ========================================================================== */
+.symm-loader-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+
+.symm-loader-bars--md {
+  gap: 5px;
+  height: 34px;
+}
+
+.symm-loader-bar {
+  width: 2px;
+  height: 16px;
+  border-radius: 1px;
+  background: linear-gradient(var(--accent-violet), var(--accent-teal));
+  animation: symm-fold 1.6s ease-in-out infinite;
+}
+
+.symm-loader-bars--md .symm-loader-bar {
+  width: 4px;
+  height: 26px;
+  border-radius: 2px;
+}
+
+.symm-loader-bar:nth-child(1) {
+  animation-delay: 0s;
+}
+.symm-loader-bar:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.symm-loader-bar:nth-child(3) {
+  animation-delay: 0.24s;
+}
+.symm-loader-bar:nth-child(4) {
+  animation-delay: 0.36s;
+}
+.symm-loader-bar:nth-child(5) {
+  animation-delay: 0.48s;
+}
+
+@keyframes symm-fold {
+  0%,
+  100% {
+    transform: scaleY(1) rotate(0deg);
+  }
+  50% {
+    transform: scaleY(0.4) rotate(180deg);
+  }
+}
+
+/* Hidden until the button actually carries .btn-loading -- the bars are
+   pre-rendered markup (not JS-inserted) so no per-site TS changes were
+   needed beyond the existing classList.add/remove("btn-loading") calls. */
+.btn-loading-indicator {
+  display: none;
+}
+
+.btn-loading .btn-loading-indicator {
+  display: flex;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
+}
+
+/* A gentle, non-blocking wobble for "that didn't work, try again" moments
+   (e.g. the voice loop's no-speech-detected case) -- never a modal. */
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shake 0.3s var(--ease-ui);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent-teal-2);
+  outline-offset: 2px;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: radial-gradient(1400px 900px at 50% -20%, var(--bg-raised), var(--bg-app));
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+.app-header {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 15px 22px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.brand {
+  margin: 0;
+  font: 700 20px var(--font-sans);
+  letter-spacing: -0.6px;
+  color: var(--text-primary);
+}
+
+.mode-switch {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-raised);
+  padding: 3px;
+  border-radius: var(--radius-md);
+}
+
+.view-tab {
+  cursor: pointer;
+  font: 600 14px var(--font-sans);
+  padding: 6px 18px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.view-tab:not(.view-tab--active):hover {
+  color: var(--text-secondary);
+  background: var(--bg-surface-2);
+}
+
+.view-tab--active {
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-teal));
+}
+
+.header-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.winrate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 5px 11px 5px 9px;
+  border-radius: var(--radius-pill);
+}
+
+.winrate-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-teal);
+  box-shadow: 0 0 7px var(--accent-teal);
+}
+
+.winrate-pill-label {
+  font: 500 11px var(--font-mono);
+  color: var(--text-tertiary);
+}
+
+.winrate-pill-value {
+  font: 600 12px var(--font-sans);
+  color: var(--accent-teal-2);
+}
+
+.ready-pill {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  color: inherit;
+  transition: background-color 0.15s;
+}
+
+.ready-pill:hover {
+  background: var(--bg-surface-2);
+}
+
+.ready-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-success);
+  box-shadow: 0 0 7px var(--accent-success);
+  flex-shrink: 0;
+}
+
+.ready-pill-dot--down {
+  background: var(--accent-danger);
+  box-shadow: 0 0 7px var(--accent-danger);
+}
+
+.ready-pill-text {
+  font: 500 11.5px var(--font-sans);
+  color: var(--text-secondary);
+}
+
+.ready-pill-caret {
+  font: 500 11px var(--font-mono);
+  color: var(--text-label);
+}
+
+.language-select {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font: 500 12px var(--font-sans);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.status-popover {
+  position: absolute;
+  top: 64px;
+  right: 22px;
+  z-index: 20;
+  width: 250px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
+  padding: 14px;
+}
+
+.status-popover-heading {
+  font: 500 10px var(--font-mono);
+  color: var(--text-label);
+  letter-spacing: 1px;
+  margin-bottom: 11px;
+}
+
+.status-popover-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+
+.status-popover-label {
+  font: 500 12.5px var(--font-sans);
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.status-popover-value {
+  font: 500 11px var(--font-mono);
+  color: var(--accent-success);
+}
+
+.status-popover-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 0 10px;
+}
+
+.status-popover-meter {
+  margin-bottom: 10px;
+}
+
+.status-popover-meter-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.status-popover-meter .status-popover-value {
+  color: var(--text-secondary);
+}
+
+.status-popover-bar {
+  height: 5px;
+  background: var(--bg-surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.status-popover-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.status-popover-bar-fill--cpu {
+  background: var(--accent-teal);
+}
+
+.status-popover-bar-fill--ram {
+  background: var(--accent-violet);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.status-dot--ok {
+  background-color: var(--accent-success);
+}
+
+.status-dot--down {
+  background-color: var(--accent-danger);
+}
+
+.status-button {
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-2);
+  color: var(--text-tertiary);
+  padding: 3px 9px;
+  font: 500 10.5px var(--font-sans);
+}
+
+/* ==========================================================================
+   Layout shell
+   ========================================================================== */
+.app-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.system-bar {
+  flex-shrink: 0;
+  height: 34px;
+  background: var(--bg-sunken);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.system-bar-label {
+  font: 500 10.5px var(--font-mono);
+  color: var(--text-label);
+  letter-spacing: 0.5px;
+  margin-right: 9px;
+}
+
+.system-bar-task {
+  display: flex;
+  align-items: center;
+}
+
+.system-bar-task-value {
+  font: 500 11px var(--font-mono);
+  color: var(--text-label);
+}
+
+.system-bar-task-value--busy {
+  color: var(--accent-teal-2);
+}
+
+.system-bar-summary {
+  cursor: pointer;
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  font: 500 10.5px var(--font-mono);
+  color: var(--text-label);
+  transition: color 0.15s;
+}
+
+.system-bar-summary:hover {
+  color: var(--text-tertiary);
+}
+
+.network-indicator {
+  display: flex;
+  align-items: center;
+  margin-left: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.network-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  margin-right: 6px;
+  flex-shrink: 0;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Amber, not the teal used for local "busy" activity, so a call that left
+   the machine reads as visually distinct from ordinary local work. */
+.network-dot--active {
+  background: var(--accent-amber);
+  box-shadow: 0 0 7px var(--accent-amber);
+}
+
+.network-popover {
+  position: fixed;
+  bottom: 44px;
+  right: 20px;
+  width: 280px;
+}
+
+.network-popover-note {
+  font: 400 11.5px var(--font-sans);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.network-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.network-history-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.network-history-row:last-child {
+  border-bottom: none;
+}
+
+.network-history-label {
+  font: 500 12px var(--font-sans);
+  color: var(--text-secondary);
+}
+
+.network-history-time {
+  font: 500 10.5px var(--font-mono);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.network-history-empty {
+  font: 400 12px var(--font-sans);
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+/* ==========================================================================
+   Setup / bootstrap overlays
+   ========================================================================== */
+.setup-panel {
+  margin: auto;
+  max-width: 30em;
+  text-align: center;
+  padding: 2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1em;
+  color: var(--text-secondary);
+}
+
+/* Shown while the setup flow is auto-progressing with nothing for the user
+   to do yet (waiting for the sidecar, checking Ollama/models) -- hidden
+   whenever an action button or the real download progress bar takes over as
+   the active indicator instead (see setup.ts's setSpinner calls). Just a
+   layout wrapper -- the visual is the .symm-loader-bars--md child inside. */
+.setup-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.setup-action {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  border: none;
+  padding: 0.7em 1.5em;
+  font: 600 1em var(--font-sans);
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-violet-2));
+  transition: filter 0.15s;
+}
+
+.setup-action:hover {
+  filter: brightness(1.12);
+}
+
+#setup-progress {
+  width: 100%;
+  accent-color: var(--accent-teal);
+}
+
+.bootstrap-log {
+  width: 100%;
+  max-height: 12em;
+  overflow-y: auto;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.75em;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.6em 0.8em;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-tertiary);
+}
+
+/* ==========================================================================
+   Talk
+   ========================================================================== */
+.chat-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: radial-gradient(900px 500px at 50% 120%, var(--bg-raised), var(--bg-app));
+}
+
+/* Body row below the topbar: a fixed-width orb rail on the left, the spine
+   stage filling the rest. */
+.talk-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* Mirror Spine topbar -- sits above the scrollable stage, always shows
+   "Turn N / total · date" for whatever's nearest the top of the viewport,
+   and a one-tap way back to the live edge (see spine.ts). */
+.spine-topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+}
+
+.spine-topbar-count {
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.spine-topbar-latest {
+  cursor: pointer;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font: 500 11px var(--font-sans);
+  padding: 5px 12px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.spine-topbar-latest:hover {
+  border-color: var(--accent-teal);
+  color: var(--accent-teal-2);
+}
+
+/* The stage holds the scrollable message list plus the seam/ticks/pearl
+   overlay as an absolutely-positioned sibling on top of it. */
+.spine-stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+}
+
+/* Labels which side of the seam is which -- the side convention shouldn't
+   have to be inferred. pointer-events:none so they never block the hit
+   column or bubbles underneath. */
+.spine-legend {
+  position: absolute;
+  top: 14px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 500 10px var(--font-mono);
+  letter-spacing: 1px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.spine-legend--user {
+  left: 24px;
+}
+
+.spine-legend--twin {
+  right: 24px;
+}
+
+.spine-legend-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+.spine-legend--user .spine-legend-swatch {
+  background: var(--accent-violet);
+}
+
+.spine-legend--twin .spine-legend-swatch {
+  background: var(--accent-teal);
+}
+
+.new-message-badge {
+  cursor: pointer;
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 5;
+  font: 600 12px var(--font-sans);
+  color: var(--bg-app);
+  background: var(--accent-teal-2);
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.5);
+  transition: filter var(--t-quick) var(--ease-ui);
+}
+
+.new-message-badge:hover {
+  filter: brightness(1.08);
+}
+
+.message-list {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 34px 0 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: var(--width-reading);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* Hide the native scrollbar -- the pearl/seam IS the scroll affordance here.
+   WebKit-only, which is all the Tauri WKWebView needs. */
+.message-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Seam/ticks/pearl overlay -- pointer-events:none by default so bubbles and
+   the speak button underneath stay clickable; only the hit-column and the
+   individual ticks re-enable it. Same max-width/margin as .message-list so
+   the seam sits at the true center of the message column, not the wider
+   stage, on large windows. */
+.spine-overlay {
+  position: absolute;
+  inset: 0;
+  max-width: var(--width-reading);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.spine-seam {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(123, 92, 255, 0.33) 12%,
+    rgba(58, 208, 192, 0.33) 88%,
+    transparent
+  );
+  opacity: 0.5;
+  animation: spine-breathe 4s var(--ease-loop) infinite;
+}
+
+@keyframes spine-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+.spine-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.spine-tick {
+  position: absolute;
+  left: 50%;
+  width: 11px;
+  height: 2px;
+  border: none;
+  border-radius: 2px;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0.75;
+  transition: opacity 0.15s, width 0.15s, filter 0.15s;
+}
+
+.spine-tick:hover {
+  opacity: 1;
+}
+
+.spine-tick--user {
+  background: var(--accent-violet-soft);
+  transform: translate(6px, -50%);
+}
+
+.spine-tick--assistant {
+  background: var(--accent-teal-2);
+  transform: translate(calc(-100% - 6px), -50%);
+}
+
+/* Voiced or otherwise memorable turns render brighter and wider -- the
+   moments worth finding again. Voiced state is session-only (see chat.ts),
+   not persisted. */
+.spine-tick--voiced {
+  width: 18px;
+  opacity: 1;
+  filter: brightness(1.35) saturate(1.2);
+  box-shadow: 0 0 6px -1px rgba(255, 255, 255, 0.35);
+}
+
+/* The only interactive element besides the ticks -- a 44px hit column
+   centered on the seam for dragging (mouse/touch/pen via Pointer Events) and
+   basic keyboard stepping (arrow keys). Real button, not a div, so it's
+   natively focusable and announced -- ARIA slider semantics are deferred. */
+.spine-hit-column {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 44px;
+  transform: translateX(-50%);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.spine-hit-column:focus-visible {
+  outline: 2px solid var(--accent-teal-2);
+  outline-offset: -2px;
+}
+
+.spine-pearl {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 40% 35%, #fff, var(--accent-teal-2));
+  animation: spine-pearl-glow 3s var(--ease-loop) infinite;
+  transition: box-shadow var(--t-quick) var(--ease-ui);
+}
+
+@keyframes spine-pearl-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 14px rgba(94, 224, 210, 0.85), 0 0 0 6px rgba(94, 224, 210, 0.13);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(94, 224, 210, 0.85), 0 0 0 9px rgba(94, 224, 210, 0.1);
+  }
+}
+
+.spine-pearl--dragging {
+  cursor: grabbing;
+  animation: none;
+  box-shadow: 0 0 24px rgba(94, 224, 210, 0.95), 0 0 0 10px rgba(94, 224, 210, 0.18);
+}
+
+/* Each turn is a full-width flex row that pushes its bubble to one side of
+   the seam; the inner column is capped at 46% so a bubble can never cross the
+   center line -- the whole point of the mirror. */
+.message {
+  display: flex;
+  width: 100%;
+}
+
+.message--user {
+  justify-content: flex-end;
+}
+
+.message--assistant {
+  justify-content: flex-start;
+}
+
+.message-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-width: 46%;
+  min-width: 0;
+}
+
+.message--user .message-inner {
+  align-items: flex-end;
+}
+
+.message--assistant .message-inner {
+  align-items: flex-start;
+}
+
+.message-meta {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+}
+
+.message--voiced .message-meta::after {
+  content: " · ♪";
+  color: var(--accent-teal-2);
+}
+
+.message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* You: a solid violet bubble, right side. */
+.message--user .message-text {
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-violet-2));
+  color: #fff;
+  font: 500 15px/1.5 var(--font-sans);
+  padding: 11px 15px;
+  border-radius: 15px 15px 3px 15px;
+  box-shadow: 0 6px 18px -8px rgba(123, 92, 255, 0.5);
+}
+
+/* The twin: no bubble, a teal-accented serif voice on the left. */
+.message--assistant .message-text {
+  font: italic 400 18px/1.6 var(--font-serif);
+  color: var(--text-secondary);
+  border-left: 2px solid var(--accent-teal);
+  padding: 2px 0 2px 16px;
+}
+
+/* Sits in the same reply slot, in place of the (still-empty) .message-text,
+   from submit until the first token streams in -- otherwise a local model's
+   10-15s generation time leaves that slot looking dead. Reuses .message-text's
+   own left-border/padding so the reply materializes exactly where this sat. */
+.message-thinking {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 28px;
+  border-left: 2px solid var(--accent-teal);
+  padding: 2px 0 2px 16px;
+}
+
+.message-thinking-dot {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.message-thinking-dot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--accent-teal);
+}
+
+.message-thinking-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-teal);
+  animation: message-thinking-ripple 2.2s ease-out infinite;
+}
+
+.message-thinking-ring:nth-child(2) {
+  animation-delay: 0.7s;
+}
+
+.message-thinking-ring:nth-child(3) {
+  animation-delay: 1.4s;
+}
+
+.message-thinking-label {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.3px;
+  color: var(--accent-teal-2);
+  opacity: 0.75;
+}
+
+@keyframes message-thinking-ripple {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* Appended under a reply that used a tool. Aligned to the reply text's own
+   left edge (matching .message-text's 18px inset) so it reads as a footnote
+   to that reply rather than as a separate row. */
+.message-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: 18px;
+}
+
+.message-tool-chip {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.3px;
+  color: var(--accent-teal-2);
+  background: color-mix(in srgb, var(--accent-teal) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-teal) 30%, transparent);
+  border-radius: 999px;
+  padding: 2px 9px;
+  cursor: default;
+}
+
+/* --- Tools tab ---------------------------------------------------------- */
+
+.tools-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: var(--width-reading);
+}
+
+.tools-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tools-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tools-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.tools-card-title {
+  font: 600 15px var(--font-sans);
+  color: var(--text-primary);
+}
+
+/* States plainly whether this tool leaves the machine -- the same contract
+   the footer's internet indicator keeps for the app as a whole. */
+.tools-card-badge {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.3px;
+  color: var(--accent-teal-2);
+  border: 1px solid color-mix(in srgb, var(--accent-teal) 30%, transparent);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.tools-field-label {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.tools-timezone-row {
+  align-items: center;
+  gap: 10px;
+}
+
+.tools-preview {
+  margin: 0;
+}
+
+.tools-warning {
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 35%, transparent);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font: 400 13px/1.5 var(--font-sans);
+  color: var(--text-secondary);
+}
+
+/* Amber rather than the default teal badge -- distinguishes a tool that
+   actually leaves the machine (weather) from one that never does (clock),
+   same color the footer's network indicator uses for the same reason. */
+.tools-card-badge--network {
+  color: var(--accent-amber);
+  border-color: color-mix(in srgb, var(--accent-amber) 35%, transparent);
+}
+
+.tools-weather-locations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tools-weather-row {
+  align-items: center;
+}
+
+.tools-weather-name {
+  flex: 2;
+}
+
+.tools-weather-coord {
+  flex: 1;
+  min-width: 0;
+}
+
+.tools-weather-remove {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-surface-alt);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+}
+
+.tools-weather-remove:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.tools-weather-actions {
+  display: flex;
+  gap: 0.6em;
+}
+
+.tools-calendar-confirm-row {
+  font: 400 13px var(--font-sans);
+  color: var(--text-secondary);
+  gap: 8px;
+}
+
+.tools-calendar-connection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tools-calendar-status {
+  font: 500 12px var(--font-sans);
+  color: var(--text-secondary);
+}
+
+/* Shared between the Tools tab's Calendar card and the Google connect
+   modal, since both need to state the same three states in the same
+   words. */
+.google-connect-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+}
+
+/* A create_calendar_event draft awaiting Alex's decision, rendered under
+   the reply that produced it -- reuses the assistant message's own
+   left-border treatment (.message--assistant .message-text) so it reads as
+   part of that reply, not a separate widget. */
+.pending-event-card {
+  border-left: 2px solid var(--accent-amber);
+  padding: 10px 0 10px 16px;
+  margin-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 360px;
+}
+
+.pending-event-title {
+  font: 600 14px var(--font-sans);
+  color: var(--text-primary);
+}
+
+.pending-event-when {
+  font: 500 12px var(--font-mono);
+  color: var(--text-muted);
+}
+
+.pending-event-description {
+  font: 400 13px/1.4 var(--font-sans);
+  color: var(--text-secondary);
+}
+
+.pending-event-actions {
+  display: flex;
+  gap: 0.6em;
+  margin-top: 4px;
+}
+
+.speak-button {
+  align-self: flex-start;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px 4px 8px;
+  transition: border-color 0.15s;
+}
+
+.speak-button:hover {
+  border-color: var(--accent-teal);
+}
+
+.speak-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-teal-2), #1c6b62);
+  flex-shrink: 0;
+}
+
+.speak-label {
+  font: 500 11px var(--font-mono);
+  color: var(--accent-teal-2);
+}
+
+.speak-button--busy {
+  cursor: default;
+}
+
+.speak-button--busy .speak-dot {
+  opacity: 0.4;
+}
+
+/* The outer form spans the full panel width but pads its left edge by the
+   rail's width, so the centered input+button row below visually lines up
+   under the spine stage rather than under the whole window. */
+.chat-form {
+  flex-shrink: 0;
+  padding: 14px 22px 20px 22px;
+  padding-left: calc(var(--width-talk-rail) + 22px);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chat-form-inner {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  max-width: var(--width-reading);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chat-form input {
+  flex: 1;
+  height: 46px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 16px;
+  font: 400 14px var(--font-sans);
+  color: var(--text-secondary);
+  transition: border-color 0.15s;
+}
+
+.chat-form input::placeholder {
+  color: var(--text-label);
+}
+
+.chat-form input:focus-visible {
+  border-color: var(--accent-violet);
+}
+
+.chat-form button[type="submit"] {
+  cursor: pointer;
+  border: none;
+  font: 600 14px var(--font-sans);
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-violet-2));
+  padding: 12px 22px;
+  border-radius: var(--radius-md);
+  transition: filter 0.15s;
+}
+
+.chat-form button[type="submit"]:hover {
+  filter: brightness(1.12);
+}
+
+.mic-error {
+  margin: 0 1.5em 0.8em;
+  color: var(--accent-danger);
+  font-size: 0.85em;
+  text-align: center;
+}
+
+.tts-status {
+  margin: 0 1.5em 0.8em;
+  font-size: 0.85em;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* Voice orb -----------------------------------------------------------
+   Ships all 5 visual states (idle/listening/transcribing/thinking/speaking)
+   per the mockup; Phase 1 only ever sets data-state to idle/listening/
+   transcribing (see voice.ts) -- thinking/speaking are defined and ready
+   for Phase 2 to wire up. */
+/* The orb dock, now a fixed-width left rail (per the "Talk 2b" design) rather
+   than a horizontal strip above the transcript -- the spine stage gets the
+   full remaining width and height. */
+.voice-dock {
+  position: relative;
+  flex: none;
+  width: var(--width-talk-rail);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 26px 18px 18px;
+  border-right: 1px solid var(--border-subtle);
+  background: linear-gradient(#0b0f16, var(--bg-app));
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.new-chat-button {
+  cursor: pointer;
+  align-self: flex-end;
+  margin-bottom: 16px;
+  font: 600 11px var(--font-sans);
+  color: var(--text-tertiary);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-strong);
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  transition: color var(--t-quick) var(--ease-ui), border-color var(--t-quick) var(--ease-ui);
+}
+
+.new-chat-button:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-tertiary);
+}
+
+.voice-orb-button {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0;
+  transition: transform var(--t-quick) var(--ease-ui);
+}
+
+.voice-orb-button:hover {
+  transform: scale(1.03);
+}
+
+.voice-orb {
+  position: relative;
+  display: block;
+  width: var(--width-voice-orb);
+  height: var(--width-voice-orb);
+}
+
+.voice-orb-halo {
+  position: absolute;
+  inset: -3.57%;
+  border-radius: 50%;
+  box-shadow: 0 0 44px -6px rgba(58, 208, 192, 0.27);
+  transition: box-shadow 0.4s;
+}
+
+.voice-orb-glow {
+  position: absolute;
+  inset: 14.29%;
+  border-radius: 50%;
+  overflow: hidden;
+  filter: blur(16px);
+  opacity: 0.5;
+  transition: opacity 0.4s;
+}
+
+.voice-orb-blob {
+  position: absolute;
+  width: 47.62%;
+  height: 47.62%;
+  border-radius: 50%;
+}
+
+.voice-orb-blob-a {
+  left: 12%;
+  top: 0;
+  background: #2a5f5a;
+  animation: voice-blob-a 5s ease-in-out infinite;
+}
+
+.voice-orb-blob-b {
+  right: 2%;
+  top: 22%;
+  background: #3a3068;
+  animation: voice-blob-b 6.5s ease-in-out infinite;
+}
+
+.voice-orb-blob-c {
+  left: 26%;
+  bottom: 4%;
+  background: #245a86;
+  animation: voice-blob-c 7.5s ease-in-out infinite;
+}
+
+.voice-orb-ring {
+  position: absolute;
+  inset: 1.19%;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.voice-orb-core {
+  position: absolute;
+  inset: 36.9%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #bfe0da, #2a5f5a00 72%);
+  animation: voice-pulse 5s ease-in-out infinite;
+}
+
+@keyframes voice-blob-a {
+  0%,
+  100% {
+    transform: translate(-16px, -8px) scale(1);
+  }
+  50% {
+    transform: translate(14px, 12px) scale(1.2);
+  }
+}
+@keyframes voice-blob-b {
+  0%,
+  100% {
+    transform: translate(14px, 10px) scale(1.12);
+  }
+  50% {
+    transform: translate(-12px, -14px) scale(0.9);
+  }
+}
+@keyframes voice-blob-c {
+  0%,
+  100% {
+    transform: translate(8px, -14px) scale(0.95);
+  }
+  50% {
+    transform: translate(-10px, 14px) scale(1.16);
+  }
+}
+@keyframes voice-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.09);
+    opacity: 1;
+  }
+}
+@keyframes voice-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.voice-orb[data-state="listening"] .voice-orb-blob-a,
+.voice-orb[data-state="listening"] .voice-orb-blob-b,
+.voice-orb[data-state="listening"] .voice-orb-blob-c {
+  background: var(--accent-violet);
+}
+.voice-orb[data-state="listening"] .voice-orb-glow {
+  opacity: 0.98;
+}
+.voice-orb[data-state="listening"] .voice-orb-core {
+  background: radial-gradient(circle, #ffffff, #7b5cff00 72%);
+  animation-duration: 1.4s;
+}
+.voice-orb[data-state="listening"] .voice-orb-ring {
+  opacity: 0.7;
+  border: 1.5px solid var(--accent-violet);
+  animation: voice-pulse 1.6s ease-in-out infinite;
+}
+.voice-orb[data-state="listening"] .voice-orb-halo {
+  box-shadow: 0 0 44px -6px rgba(123, 92, 255, 0.6);
+}
+
+.voice-orb[data-state="transcribing"] .voice-orb-blob-a,
+.voice-orb[data-state="transcribing"] .voice-orb-blob-b,
+.voice-orb[data-state="transcribing"] .voice-orb-blob-c {
+  background: #4a5468;
+}
+.voice-orb[data-state="transcribing"] .voice-orb-glow {
+  opacity: 0.7;
+}
+.voice-orb[data-state="transcribing"] .voice-orb-core {
+  background: radial-gradient(circle, #cfd6e2, #4a546800 72%);
+  animation-duration: 2s;
+}
+.voice-orb[data-state="transcribing"] .voice-orb-ring {
+  opacity: 0.7;
+  border: 1.5px dashed var(--text-tertiary);
+  animation: voice-spin 3s linear infinite;
+}
+
+.voice-orb[data-state="thinking"] .voice-orb-blob-a,
+.voice-orb[data-state="thinking"] .voice-orb-blob-b,
+.voice-orb[data-state="thinking"] .voice-orb-blob-c {
+  background: var(--accent-teal);
+}
+.voice-orb[data-state="thinking"] .voice-orb-glow {
+  opacity: 0.92;
+}
+.voice-orb[data-state="thinking"] .voice-orb-core {
+  background: radial-gradient(circle, #eef6f4, #3ad0c000 72%);
+  animation-duration: 1.7s;
+}
+.voice-orb[data-state="thinking"] .voice-orb-ring {
+  opacity: 0.7;
+  border: 1.5px dashed var(--accent-teal-2);
+  animation: voice-spin 2.2s linear infinite;
+}
+
+.voice-orb[data-state="speaking"] .voice-orb-blob-a,
+.voice-orb[data-state="speaking"] .voice-orb-blob-b,
+.voice-orb[data-state="speaking"] .voice-orb-blob-c {
+  background: var(--accent-teal);
+}
+.voice-orb[data-state="speaking"] .voice-orb-glow {
+  opacity: 1;
+}
+.voice-orb[data-state="speaking"] .voice-orb-core {
+  background: radial-gradient(circle, #d7fbf5, #3ad0c000 72%);
+  animation-duration: 1.5s;
+}
+.voice-orb[data-state="speaking"] .voice-orb-ring {
+  opacity: 0.7;
+  border: 1.5px solid var(--accent-teal);
+  animation: voice-spin 9s linear infinite;
+}
+.voice-orb[data-state="speaking"] .voice-orb-halo {
+  box-shadow: 0 0 44px -6px rgba(58, 208, 192, 0.6);
+}
+
+/* Live input-level meter shown only during "listening" -- 5 bars driven from
+   an AnalyserNode in voice.ts. The height transition alone gives the
+   reduced-motion "steps rather than animates" look for free, since the
+   existing blanket prefers-reduced-motion rule already collapses it. */
+.voice-level-meter {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 18px;
+  margin-top: 4px;
+}
+
+.voice-level-bar {
+  width: 4px;
+  height: 15%;
+  border-radius: 2px;
+  background: var(--accent-violet-soft);
+  transition: height var(--t-quick) var(--ease-ui);
+}
+
+.voice-orb-label {
+  font: 600 13px var(--font-mono);
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+  color: var(--text-tertiary);
+}
+
+.voice-orb-sub {
+  font: 400 12px var(--font-sans);
+  color: var(--text-label);
+  min-height: 16px;
+}
+
+/* Hands-free conversation-mode toggle -- a labelled switch that keeps the
+   listen -> reply-aloud -> resume-listening loop running (see voice.ts). */
+.conversation-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 5px 12px 5px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.conversation-toggle:hover:not(:disabled) {
+  border-color: var(--accent-teal);
+}
+
+.conversation-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.conversation-toggle-track {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--bg-surface-2);
+  transition: background 0.18s;
+  flex-shrink: 0;
+}
+
+.conversation-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.18s, background 0.18s;
+}
+
+.conversation-toggle--on .conversation-toggle-track {
+  background: var(--accent-teal);
+}
+
+.conversation-toggle--on .conversation-toggle-thumb {
+  transform: translateX(16px);
+  background: #fff;
+}
+
+.conversation-toggle-label {
+  font: 500 11.5px var(--font-sans);
+  color: var(--text-secondary);
+}
+
+.conversation-toggle--on .conversation-toggle-label {
+  color: var(--accent-teal-2);
+}
+
+/* How long a pause ends your turn -- feeds SILENCE_MS in vad.ts, persisted
+   through the sidecar's /settings store (see initVoicePauseControl). */
+.voice-pause {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 0 12px 0 6px;
+  box-sizing: border-box;
+}
+
+.voice-pause-label {
+  font: 500 11.5px var(--font-sans);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.voice-pause-slider {
+  flex: 1;
+  min-width: 0;
+  height: 3px;
+  appearance: none;
+  border-radius: 999px;
+  background: var(--bg-surface-2);
+  cursor: pointer;
+}
+
+.voice-pause-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent-teal);
+  cursor: pointer;
+}
+
+.voice-pause-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voice-pause-value {
+  font: 500 11px var(--font-mono);
+  color: var(--text-secondary);
+  min-width: 30px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reflective, non-interactive ambient indicator -- highlights whichever
+   bucket matches the orb's real current state (see FILMSTRIP_BUCKET in
+   voice.ts). Not a control: the orb + its label/sub already carry the real,
+   accessible state information. A vertical list of rows in the rail, each
+   lighting up (background + bright dot/label) when it's the active bucket. */
+.voice-filmstrip {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+  margin-top: 22px;
+}
+
+.voice-filmstrip-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 9px;
+  border-radius: 9px;
+  color: var(--text-label);
+  transition: background var(--t-base) var(--ease-ui), color var(--t-base) var(--ease-ui);
+}
+
+.voice-filmstrip-chip--active {
+  background: var(--bg-surface-2);
+}
+
+.voice-filmstrip-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-strong);
+}
+
+.voice-filmstrip-chip[data-bucket="listen"] .voice-filmstrip-dot {
+  background: radial-gradient(circle, var(--accent-violet), #3a2b8c);
+  border: none;
+}
+
+.voice-filmstrip-chip[data-bucket="think"] .voice-filmstrip-dot {
+  background: conic-gradient(var(--accent-teal), var(--accent-violet), var(--accent-teal));
+  border: none;
+}
+
+.voice-filmstrip-chip[data-bucket="speak"] .voice-filmstrip-dot {
+  background: radial-gradient(circle, var(--accent-teal-2), #1c6b62);
+  border: none;
+}
+
+.voice-filmstrip-chip--active .voice-filmstrip-dot {
+  box-shadow: 0 0 10px -1px currentColor;
+}
+
+.voice-filmstrip-chip--active[data-bucket="idle"] { color: var(--text-tertiary); }
+.voice-filmstrip-chip--active[data-bucket="listen"] { color: var(--accent-violet-soft); }
+.voice-filmstrip-chip--active[data-bucket="think"] { color: var(--accent-teal-2); }
+.voice-filmstrip-chip--active[data-bucket="speak"] { color: var(--accent-teal); }
+
+.voice-filmstrip-label {
+  font: 600 10px var(--font-mono);
+  letter-spacing: 0.5px;
+  color: inherit;
+}
+
+/* Rail footer: TASK + CPU/RAM, mirroring the global system-bar footer's data
+   (see monitor.ts) so it's visible without leaving the Talk tab. Pinned to
+   the bottom of the rail. */
+.voice-dock-footer {
+  margin-top: auto;
+  width: 100%;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.voice-dock-footer-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.voice-dock-footer-label {
+  font: 500 9px var(--font-mono);
+  letter-spacing: 1px;
+  color: var(--text-label);
+}
+
+.voice-dock-footer-value {
+  font: 500 9px var(--font-mono);
+  color: var(--text-label);
+}
+
+.voice-dock-footer-value.system-bar-task-value--busy {
+  color: var(--accent-teal-2);
+}
+
+.voice-dock-footer-stats {
+  font: 500 9px var(--font-mono);
+  color: var(--text-label);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   Train shell
+   ========================================================================== */
+.subtabs {
+  flex-shrink: 0;
+  display: flex;
+  gap: 2px;
+  padding: 14px 22px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.subtab {
+  cursor: pointer;
+  font: 600 13.5px var(--font-sans);
+  padding: 8px 15px;
+  border-radius: 8px 8px 0 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.subtab:not(.subtab--active):hover {
+  color: var(--text-secondary);
+  background: var(--bg-surface-alt);
+}
+
+.subtab--active {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
+.train-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 1.5em;
+  padding: 1.5em;
+  overflow: hidden;
+  max-width: var(--width-dashboard);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Overview ------------------------------------------------------------- */
+.overview-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 26px;
+  max-width: var(--width-dashboard);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.overview-hero {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  background: linear-gradient(120deg, var(--bg-surface-alt), var(--bg-raised));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 26px 28px;
+}
+
+.overview-ring {
+  flex-shrink: 0;
+}
+
+.overview-ring-track {
+  stroke: var(--bg-surface-2);
+}
+
+.overview-ring-arc {
+  stroke: var(--accent-violet);
+  stroke-dasharray: 289;
+  stroke-dashoffset: 289;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.overview-ring-pct {
+  font: 600 26px var(--font-sans);
+  fill: var(--text-primary);
+}
+
+.overview-ring-caption {
+  font: 500 9px var(--font-mono);
+  fill: var(--text-muted);
+}
+
+.overview-hero-copy {
+  flex: 1;
+}
+
+.overview-hero-kicker {
+  font: 500 11px var(--font-mono);
+  color: var(--text-label);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.overview-hero-title {
+  font: 600 22px var(--font-sans);
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.overview-hero-desc {
+  margin: 0;
+  font: 400 14px/1.6 var(--font-sans);
+  color: var(--text-tertiary);
+  max-width: 520px;
+}
+
+.overview-hero-desc strong {
+  color: var(--accent-teal-2);
+}
+
+.overview-next-step {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding-left: 24px;
+  border-left: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.overview-next-step-label {
+  font: 600 15px var(--font-sans);
+  color: var(--text-primary);
+  max-width: 220px;
+}
+
+.overview-next-step-button {
+  cursor: pointer;
+  align-self: flex-start;
+  border: none;
+  font: 600 12.5px var(--font-sans);
+  color: var(--bg-app);
+  background: var(--accent-teal);
+  padding: 8px 15px;
+  border-radius: 9px;
+  transition: filter 0.15s;
+}
+
+.overview-next-step-button:hover {
+  filter: brightness(1.1);
+}
+
+.overview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.overview-stat {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+
+.overview-stat-label {
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.overview-stat--memories .overview-stat-label {
+  color: var(--accent-violet);
+}
+.overview-stat--style .overview-stat-label {
+  color: var(--accent-teal);
+}
+.overview-stat--voice .overview-stat-label {
+  color: var(--accent-teal-2);
+}
+.overview-stat--persona .overview-stat-label {
+  color: var(--accent-amber);
+}
+
+.overview-stat-value {
+  font: 600 30px var(--font-sans);
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.overview-stat-value-of {
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.overview-stat-caption {
+  font: 400 12px var(--font-sans);
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.overview-stat-bar {
+  height: 5px;
+  background: var(--bg-surface-2);
+  border-radius: 3px;
+  margin-top: 14px;
+  overflow: hidden;
+}
+
+.overview-stat-bar-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.4s ease;
+}
+
+.overview-stat--memories .overview-stat-bar-fill {
+  background: var(--accent-violet);
+}
+.overview-stat--style .overview-stat-bar-fill {
+  background: var(--accent-teal);
+}
+.overview-stat--voice .overview-stat-bar-fill {
+  background: var(--accent-teal-2);
+}
+.overview-stat--persona .overview-stat-bar-fill {
+  background: var(--accent-amber);
+}
+
+.overview-flow {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+}
+
+.overview-flow-kicker {
+  font: 500 11px var(--font-mono);
+  color: var(--text-label);
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.overview-flow-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.overview-flow-step {
+  flex: 1;
+  text-align: center;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 10px;
+}
+
+.overview-flow-step--highlight {
+  border-color: var(--border-dashed);
+}
+
+.overview-flow-step-title {
+  font: 600 13px var(--font-sans);
+  color: var(--text-secondary);
+}
+
+.overview-flow-step--highlight .overview-flow-step-title {
+  color: var(--accent-teal-2);
+}
+
+.overview-flow-step-caption {
+  font: 400 11px var(--font-sans);
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.overview-flow-arrow {
+  font: 600 18px var(--font-sans);
+  color: var(--accent-teal);
+}
+
+/* ==========================================================================
+   Shared form controls (memories, style, backup)
+   ========================================================================== */
+.tab-intro {
+  margin: 0 0 0.4em;
+  font-size: 0.85em;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+}
+
+.tab-intro strong {
+  color: var(--text-secondary);
+}
+
+.memory-form {
+  flex: 0 0 20em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}
+
+.memory-form > input[type="text"],
+.memory-form-row input,
+.memory-browser-toolbar > input,
+.backup-config-form > input,
+.backup-password-row > input {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  padding: 0.5em 0.7em;
+  font-size: 0.95em;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s;
+}
+
+.memory-form > input[type="text"]::placeholder,
+.memory-form-row input::placeholder,
+.memory-browser-toolbar > input::placeholder,
+.backup-config-form > input::placeholder,
+.backup-password-row > input::placeholder {
+  color: var(--text-label);
+}
+
+.memory-form > input[type="text"]:focus-visible,
+.memory-form-row input:focus-visible,
+.memory-browser-toolbar > input:focus-visible,
+.backup-config-form > input:focus-visible,
+.backup-password-row > input:focus-visible {
+  border-color: var(--accent-violet);
+}
+
+.backup-password-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.backup-password-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.backup-password-hint {
+  margin: 0.2em 0 0;
+  font-size: 0.8em;
+  color: var(--text-tertiary);
+}
+
+.memory-form textarea {
+  flex: 1;
+  min-height: 8em;
+  resize: vertical;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  padding: 0.6em 0.9em;
+  font-size: 1em;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s;
+}
+
+.memory-form textarea::placeholder {
+  color: var(--text-label);
+}
+
+.memory-form textarea:focus-visible {
+  border-color: var(--accent-violet);
+}
+
+.memory-form-row {
+  display: flex;
+  gap: 0.6em;
+}
+
+.memory-form-row input {
+  flex: 1;
+}
+
+.memory-form-actions {
+  display: flex;
+  gap: 0.6em;
+}
+
+.memory-form-actions button {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  border: none;
+  padding: 0.6em 1.2em;
+  font-size: 0.95em;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-violet-2));
+  transition: filter 0.15s;
+}
+
+.memory-form-actions button:hover {
+  filter: brightness(1.12);
+}
+
+#memory-cancel {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-tertiary);
+}
+
+.memory-form-error {
+  color: var(--accent-danger);
+  font-size: 0.9em;
+  margin: 0;
+}
+
+/* System tab's "Your name" field -- the "you can change this later in
+   System" the first-run onboarding screen promises (see settings.ts's
+   initOwnerNameField). Reuses .memory-form's column layout and input
+   styling; only the row (input + save button side by side) is new. */
+.system-owner-name-form {
+  margin-bottom: 1.5em;
+}
+
+.system-owner-name-label {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.system-owner-name-row input {
+  min-width: 0;
+}
+
+.system-owner-name-row button {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  border: none;
+  padding: 0.5em 1.2em;
+  font-size: 0.95em;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-violet-2));
+  transition: filter 0.15s;
+}
+
+.system-owner-name-row button:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.system-owner-name-hint {
+  font-size: 0.8em;
+  margin-top: 0.4em;
+}
+
+/* min-height: 0 is required here, not optional decoration -- without it a
+   flex column child defaults to min-height: auto, so it grows to fit its
+   content (e.g. a long distilled style guide) instead of respecting the
+   height its own flex-row parent (.train-panel / .style-columns, both
+   min-height: 0 + overflow: hidden) already stretched it to. The overflow
+   then gets silently clipped by that parent instead of scrolling -- this is
+   what #style-list's own `flex: 1; overflow-y: auto` needs in order to
+   actually activate rather than never being reached. */
+.memory-browser {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+
+.memory-browser-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  flex-wrap: wrap;
+}
+
+.memory-browser-toolbar > input {
+  flex: 1;
+  min-width: 10em;
+}
+
+.memory-io-actions {
+  display: flex;
+  gap: 0.5em;
+  flex-wrap: wrap;
+}
+
+.memory-io-status {
+  margin: 0;
+  font-size: 0.85em;
+  color: var(--text-tertiary);
+}
+
+.memory-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}
+
+.memory-list-empty {
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 2em;
+}
+
+.memory-item {
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+
+.memory-item-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font: 500 11px var(--font-mono);
+  color: var(--accent-violet);
+  margin-bottom: 8px;
+}
+
+.memory-item-content {
+  margin: 0 0 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: 400 15px/1.5 var(--font-sans);
+  color: var(--text-secondary);
+  max-width: 70ch;
+}
+
+.memory-item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.memory-item-actions button {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-tertiary);
+  padding: 5px 13px;
+  font: 500 12px var(--font-sans);
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+
+.memory-item-actions button:hover {
+  border-color: #3a4556;
+  color: var(--text-secondary);
+}
+
+.memory-item-actions button.memory-item-delete,
+.memory-item-actions button:last-child {
+  color: var(--accent-danger-muted);
+  border-color: #3a2a2a;
+}
+
+.memory-item-actions button.memory-item-delete:hover,
+.memory-item-actions button:last-child:hover {
+  background: #2a1818;
+}
+
+/* ==========================================================================
+   Voice samples
+   ========================================================================== */
+.voice-samples-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  max-width: var(--width-reading);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.voice-samples-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+}
+
+.voice-samples-intro {
+  margin: 0;
+  flex: 1;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-tertiary);
+}
+
+.voice-samples-intro strong {
+  color: var(--text-secondary);
+}
+
+.voice-samples-count {
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.voice-samples-count-value {
+  font: 600 20px var(--font-sans);
+  color: var(--accent-teal-2);
+}
+
+.voice-samples-count-of {
+  font: 600 20px var(--font-sans);
+  color: var(--text-muted);
+}
+
+.voice-samples-count-caption {
+  font: 400 11px var(--font-sans);
+  color: var(--text-muted);
+}
+
+.voice-samples-reset {
+  cursor: pointer;
+  flex-shrink: 0;
+  font: 600 11px var(--font-sans);
+  color: var(--text-tertiary);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-strong);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  transition: color var(--t-quick) var(--ease-ui), border-color var(--t-quick) var(--ease-ui);
+}
+
+.voice-samples-reset:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-tertiary);
+}
+
+.voice-samples-reset:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.voice-prompt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+
+.voice-prompt-row {
+  border-radius: var(--radius-md);
+  padding: 18px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8em;
+}
+
+.voice-prompt-row--pending {
+  border-style: dashed;
+  border-color: var(--border-dashed);
+}
+
+.voice-prompt-text {
+  flex: 1 1 20em;
+  margin: 0;
+  font: 400 15px/1.5 var(--font-sans);
+  color: var(--text-secondary);
+}
+
+.voice-prompt-status {
+  font-size: 0.8em;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.voice-prompt-status--done {
+  color: var(--accent-success);
+}
+
+.voice-prompt-status--done::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-success);
+  display: inline-block;
+}
+
+.voice-prompt-record {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  padding: 7px 13px;
+  font: 500 12.5px var(--font-sans);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.voice-prompt-record:hover {
+  border-color: var(--accent-teal);
+  color: var(--accent-teal-2);
+}
+
+.voice-prompt-row--pending .voice-prompt-record {
+  color: var(--bg-app);
+  background: var(--accent-teal-2);
+  border: none;
+  font-weight: 600;
+}
+
+.voice-prompt-row--pending .voice-prompt-record:hover {
+  filter: brightness(1.08);
+}
+
+.voice-prompt-audio {
+  height: 2.2em;
+  max-width: 14em;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+}
+
+/* Best-effort restyle of native <audio controls> -- WebKit-only
+   pseudo-elements, so this renders in the Tauri WebView on macOS and
+   degrades gracefully (native default look) elsewhere. */
+.voice-prompt-audio::-webkit-media-controls-panel {
+  background-color: var(--bg-surface-2);
+}
+.voice-prompt-audio::-webkit-media-controls-play-button,
+.voice-prompt-audio::-webkit-media-controls-current-time-display,
+.voice-prompt-audio::-webkit-media-controls-time-remaining-display {
+  color: var(--text-secondary);
+}
+
+.voice-prompt-delete {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1px solid #3a2a2a;
+  background: transparent;
+  padding: 5px 12px;
+  font: 500 12px var(--font-sans);
+  color: var(--accent-danger-muted);
+  flex-shrink: 0;
+  transition: background-color 0.15s;
+}
+
+.voice-prompt-delete:hover {
+  background: #2a1818;
+}
+
+/* ==========================================================================
+   Style
+   ========================================================================== */
+.style-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5em;
+  gap: 0.4em;
+  overflow: hidden;
+  max-width: var(--width-dashboard);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.style-tabs {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-top: 0.4em;
+  border-bottom: 1px solid var(--border);
+}
+
+.style-tab {
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  padding: 0.6em 1em;
+  font: 600 0.85em var(--font-sans);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.style-tab:hover {
+  color: var(--text-secondary);
+}
+
+.style-tab--active {
+  color: var(--accent-teal-2);
+  border-color: var(--accent-teal);
+}
+
+/* Same rationale as .memory-browser above: a flex-column child needs its
+   own min-height: 0 or it grows to fit content instead of respecting the
+   height .style-panel already stretched it to, silently clipping instead
+   of scrolling. Examples adds its own overflow: hidden + makes #style-list
+   the actual scrollable region so the toolbar/column-heads stay pinned;
+   Guide/Import just scroll as a whole panel. */
+.style-tabpanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+  padding-top: 0.8em;
+}
+
+#style-tabpanel-examples {
+  overflow: hidden;
+}
+
+#style-tabpanel-guide,
+#style-tabpanel-import {
+  overflow-y: auto;
+}
+
+.style-toolbar {
+  display: flex;
+  gap: 0.6em;
+  flex-shrink: 0;
+}
+
+.style-toolbar input[type="text"],
+#style-search {
+  flex: 1;
+  min-width: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  padding: 0.5em 0.7em;
+  font-size: 0.9em;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s;
+}
+
+#style-search:focus-visible {
+  border-color: var(--accent-violet);
+}
+
+.style-toolbar button {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-tertiary);
+  padding: 0.5em 0.9em;
+  font: 500 0.85em var(--font-sans);
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.style-toolbar button:hover {
+  border-color: var(--accent-teal);
+  color: var(--accent-teal-2);
+}
+
+/* Quarantine notice for legacy "persona-check" entries -- rows PR #76 saved
+   from a duel's winning ANSWER (model output) before the composer fix made
+   that impossible. Amber matches the app's other "needs your attention, not
+   an error" cases; never auto-dismissed, only hidden by removal. */
+.style-legacy-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  flex-shrink: 0;
+  border: 1px solid var(--accent-amber);
+  border-radius: var(--radius-sm);
+  background: rgba(244, 191, 79, 0.08);
+  padding: 0.7em 0.9em;
+}
+
+.style-legacy-notice-text {
+  flex: 1;
+  margin: 0;
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+#style-legacy-notice-remove {
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-amber);
+  background: transparent;
+  color: var(--accent-amber);
+  padding: 0.5em 0.9em;
+  font: 600 0.85em var(--font-sans);
+  white-space: nowrap;
+  transition: filter 0.15s;
+}
+
+#style-legacy-notice-remove:hover {
+  filter: brightness(1.15);
+}
+
+#style-legacy-notice-remove:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+#style-add {
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-violet-2));
+  border: none;
+  color: #fff;
+  font-weight: 600;
+}
+
+#style-add:hover {
+  filter: brightness(1.12);
+  color: #fff;
+}
+
+/* Plain 1fr can't shrink below its content's intrinsic width, which stops
+   text-overflow: ellipsis from ever engaging -- minmax(0, 1fr) is required
+   for the SUBJECT column to actually truncate instead of overflowing. */
+.style-row,
+.style-row--head {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+}
+
+.style-row--head {
+  flex-shrink: 0;
+  padding: 0 12px;
+  font: 600 10px var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.style-row {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: inherit;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s;
+}
+
+.style-row:hover,
+.style-row:focus-visible {
+  border-color: var(--accent-teal);
+  outline: none;
+}
+
+.style-row-type {
+  font: 600 10px var(--font-mono);
+  color: var(--accent-violet);
+}
+
+.style-row-subject {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.style-row-date {
+  font: 500 11px var(--font-mono);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.style-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.style-pipeline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 16px;
+  flex-wrap: wrap;
+}
+
+.style-pipeline-step {
+  flex: none;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 9px 14px;
+  font: 500 12.5px var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+.style-pipeline-step--active {
+  color: var(--accent-teal-2);
+  font-weight: 600;
+  border-color: var(--border-dashed);
+}
+
+.style-pipeline-step--pending {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.style-pipeline-arrow {
+  color: #3a4556;
+}
+
+.style-kind-row {
+  display: flex;
+  gap: 1em;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.style-kind-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  cursor: pointer;
+}
+
+.info-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1em;
+  height: 1.1em;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  font: inherit;
+  font-size: 0.85em;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.info-tip:hover,
+.info-tip:focus-visible,
+.info-tip[aria-expanded="true"] {
+  color: var(--accent-teal-2);
+  outline: none;
+}
+
+/* The click-to-expand help text a .info-tip button reveals -- native `title`
+   hover tooltips aren't reliably shown in Tauri's WebView, so every hint
+   toggles one of these open instead (see infoTips.ts). */
+.info-tip-text {
+  margin: 0.3em 0 0.8em;
+  padding: 0.5em 0.8em;
+  border-left: 2px solid var(--border-strong);
+  color: var(--text-tertiary);
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+/* The guide now lives on its own tab instead of sharing a column with the
+   example list, so unlike the old .memory-browser layout it doesn't need a
+   height cap of its own -- it can simply take the tabpanel's full scroll. */
+.style-guide-box {
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  margin-bottom: 0.8em;
+}
+
+.whatsapp-participants {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  margin: 0.6em 0;
+}
+
+.whatsapp-participant {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+#whatsapp-remove-imported,
+#signal-remove-imported {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-tertiary);
+}
+
+.style-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font: 500 0.85em var(--font-sans);
+  color: var(--text-tertiary);
+  margin-bottom: 0.4em;
+}
+
+.style-guide-actions {
+  display: flex;
+  gap: 0.5em;
+}
+
+.style-guide-actions button {
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-tertiary);
+  padding: 0.3em 0.7em;
+  font: 500 0.8em var(--font-sans);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.style-guide-actions button:hover {
+  border-color: var(--accent-teal);
+  color: var(--accent-teal-2);
+}
+
+#style-distill,
+#style-distill-local {
+  background: var(--accent-teal);
+  color: var(--bg-app);
+  border: none;
+  font-weight: 600;
+}
+
+#style-distill:hover,
+#style-distill-local:hover {
+  filter: brightness(1.1);
+}
+
+.style-guide-content {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-secondary);
+}
+
+.style-guide-freshness {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: 0 0 0.6em;
+  font: 500 0.8em var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+.style-guide-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.style-guide-status-dot--fresh {
+  background: var(--accent-teal);
+}
+
+.style-guide-status-dot--stale {
+  background: var(--accent-danger-muted);
+}
+
+.style-info-card {
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: var(--bg-surface-alt);
+  border: 1px dashed var(--border-dashed);
+}
+
+.style-info-card p {
+  margin: 0 0 0.6em;
+}
+
+.style-info-card button {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-tertiary);
+  padding: 0.5em 1em;
+  font: 600 0.85em var(--font-sans);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.style-info-card button:hover {
+  border-color: var(--accent-teal);
+  color: var(--accent-teal-2);
+}
+
+.style-import-cards {
+  display: flex;
+  gap: 1em;
+  flex-shrink: 0;
+}
+
+.style-import-card {
+  cursor: pointer;
+  flex: 1;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: inherit;
+  transition: border-color 0.15s;
+}
+
+.style-import-card:hover,
+.style-import-card:focus-visible {
+  border-color: var(--accent-teal);
+  outline: none;
+}
+
+.style-import-card-title {
+  font: 600 14px var(--font-sans);
+  color: var(--text-primary);
+}
+
+.style-import-card-desc {
+  font: 400 12.5px/1.5 var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+.style-import-history-box {
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+
+.style-import-history-title {
+  margin: 0 0 0.6em;
+  font: 600 0.85em var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+.style-import-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+.style-import-history-item,
+.style-import-history-empty {
+  font: 400 12.5px var(--font-sans);
+  color: var(--text-secondary);
+}
+
+.style-import-history-empty {
+  color: var(--text-muted);
+}
+
+/* Same reset-then-restyle approach as .openrouter-modal -- this is a native
+   <dialog>, not a custom overlay. */
+.style-import-modal {
+  padding: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  box-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.6);
+  width: min(480px, calc(100vw - 48px));
+}
+
+.style-import-modal::backdrop {
+  background: rgba(6, 7, 9, 0.6);
+}
+
+.style-import-modal h3 {
+  margin: 0 0 6px;
+  font: 600 16px var(--font-sans);
+  color: var(--text-primary);
+}
+
+.style-import-modal input[type="file"] {
+  display: block;
+  margin: 0.6em 0;
+  max-width: 100%;
+  color: var(--text-tertiary);
+}
+
+.style-import-modal button {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: none;
+  padding: 0.5em 1em;
+  font: 600 0.9em var(--font-sans);
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-violet-2));
+  transition: filter 0.15s;
+}
+
+.style-import-modal button:hover {
+  filter: brightness(1.12);
+}
+
+.style-import-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6em;
+  margin-top: 0.8em;
+}
+
+#style-whatsapp-modal-close,
+#style-signal-modal-close,
+#whatsapp-remove-imported,
+#signal-remove-imported {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-tertiary);
+}
+
+/* ==========================================================================
+   Style detail overlay -- lives inside #style-panel so [hidden] tears it
+   down on subtab change with no extra code. .style-detail itself is the
+   fixed, viewport-relative frame (no ancestor sets transform/filter/contain);
+   its two children are positioned relative to it, not the viewport directly
+   -- both being position: fixed with no sized parent would otherwise leave
+   #style-detail itself with zero layout size.
+   ========================================================================== */
+.style-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 149;
+}
+
+.style-detail-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  background: rgba(5, 6, 7, 0.5);
+}
+
+.style-detail-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 151;
+  width: min(440px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  padding: 20px;
+  background: var(--bg-raised);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: -20px 0 60px -12px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.style-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  flex-wrap: wrap;
+}
+
+.style-detail-type-tag {
+  font: 600 12px var(--font-sans);
+  color: var(--text-primary);
+}
+
+.style-detail-source-tag {
+  font: 500 10px var(--font-mono);
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: var(--accent-teal);
+  background: rgba(58, 208, 192, 0.1);
+}
+
+.style-detail-date {
+  margin-left: auto;
+  font: 500 11px var(--font-mono);
+  color: var(--text-muted);
+}
+
+.style-detail-close {
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  font-size: 1.2em;
+  line-height: 1;
+  padding: 0.1em 0.3em;
+}
+
+.style-detail-close:hover {
+  color: var(--text-secondary);
+}
+
+.style-detail-question-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+.style-detail-question-field label {
+  font: 500 0.8em var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+.style-detail-question-field input {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  padding: 0.5em 0.7em;
+  font-size: 0.95em;
+  font-family: var(--font-sans);
+}
+
+.style-detail-body-label {
+  font: 500 0.8em var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+/* Deliberately not `.memory-form textarea` -- that shared rule's
+   min-height: 8em fights this textarea's flex: 1 in the overlay's column
+   layout. */
+#style-detail-body {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  padding: 0.6em 0.9em;
+  font: 400 1em var(--font-sans);
+}
+
+#style-detail-body:focus-visible {
+  border-color: var(--accent-violet);
+}
+
+.style-detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6em;
+  flex-shrink: 0;
+}
+
+.style-detail-actions-right {
+  display: flex;
+  gap: 0.6em;
+}
+
+.style-detail-actions button {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  border: none;
+  padding: 0.6em 1.2em;
+  font-size: 0.95em;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-violet-2));
+  transition: filter 0.15s;
+}
+
+.style-detail-actions button:hover {
+  filter: brightness(1.12);
+}
+
+#style-detail-cancel {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-tertiary);
+}
+
+.style-detail-delete {
+  background: transparent !important;
+  border: 1px solid #3a2a2a;
+  color: var(--accent-danger-muted);
+}
+
+.style-detail-delete:hover {
+  background: #2a1818 !important;
+  filter: none !important;
+}
+
+/* ==========================================================================
+   World knowledge (historical vault)
+   ========================================================================== */
+.vault-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5em;
+  max-width: var(--width-reading);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vault-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+}
+
+.vault-form input[type="file"] {
+  flex: 1;
+  font: 400 12.5px var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+.vault-form button {
+  cursor: pointer;
+  flex-shrink: 0;
+  font: 600 12px var(--font-sans);
+  color: var(--bg-app);
+  background: var(--accent-teal-2);
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  transition: filter var(--t-quick) var(--ease-ui);
+}
+
+.vault-form button:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.vault-form button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.vault-status {
+  margin: 0;
+  font-size: 0.85em;
+  color: var(--text-tertiary);
+}
+
+/* ==========================================================================
+   Persona check
+   ========================================================================== */
+.persona-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5em;
+  max-width: var(--width-dashboard);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.persona-scoreboard {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  background: linear-gradient(120deg, var(--bg-surface-alt), var(--bg-raised));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 22px 26px;
+  flex-wrap: wrap;
+}
+
+.persona-scoreboard-headline {
+  flex-shrink: 0;
+}
+
+.persona-winpct {
+  font: 600 44px var(--font-sans);
+  color: var(--accent-teal-2);
+  line-height: 1;
+}
+
+.persona-winpct-caption {
+  font: 400 12px var(--font-sans);
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.persona-scoreboard-arms {
+  flex: 1;
+  min-width: 220px;
+}
+
+.persona-scoreboard-arms-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: 400 11px var(--font-mono);
+  color: var(--text-label);
+  margin-bottom: 8px;
+}
+
+.persona-arm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 13px var(--font-sans);
+}
+
+.persona-arm-row td {
+  padding: 4px 10px 4px 0;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.persona-arm-label {
+  width: 100%;
+}
+
+.persona-arm-row--default .persona-arm-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.persona-arm-record {
+  font: 400 11px var(--font-mono);
+  color: var(--text-muted);
+}
+
+.persona-arm-rate {
+  font: 600 13px var(--font-sans);
+  color: var(--accent-teal-2);
+  text-align: right;
+}
+
+.persona-scoreboard-chart {
+  flex: none;
+  width: 180px;
+}
+
+.persona-scoreboard-chart-label {
+  font: 400 11px var(--font-mono);
+  color: var(--text-label);
+  margin-bottom: 8px;
+}
+
+.persona-recent-chart {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+  height: 40px;
+}
+
+.persona-recent-bar {
+  flex: 1;
+  height: 100%;
+  border-radius: 2px;
+  background: #3a4556;
+}
+
+.persona-recent-bar--default {
+  background: var(--accent-teal);
+}
+
+.persona-recent-bar--tie {
+  background: var(--text-muted);
+}
+
+.persona-summary-fallback {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  margin: 0;
+}
+
+.persona-form {
+  display: flex;
+  gap: 12px;
+}
+
+.persona-form input {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  padding: 0 16px;
+  font: 400 14px var(--font-sans);
+  transition: border-color 0.15s;
+}
+
+.persona-form input::placeholder {
+  color: var(--text-label);
+}
+
+.persona-form input:focus-visible {
+  border-color: var(--accent-violet);
+}
+
+.persona-form button,
+#persona-choose-tie {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  border: none;
+  font: 600 14px var(--font-sans);
+  color: var(--bg-app);
+  background: var(--accent-teal);
+  padding: 13px 24px;
+  transition: filter 0.15s;
+}
+
+.persona-form button:hover,
+#persona-choose-tie:hover {
+  filter: brightness(1.1);
+}
+
+#persona-choose-tie {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-tertiary);
+  padding: 10px 18px;
+}
+
+#persona-choose-tie:hover {
+  filter: none;
+  border-color: var(--accent-teal);
+  color: var(--accent-teal-2);
+}
+
+.persona-answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.persona-answer {
+  min-width: 0;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color var(--t-slow) var(--ease-ui), background-color var(--t-slow) var(--ease-ui);
+}
+
+/* Briefly flashed on the card revealed as the persona's actual reply. */
+.persona-answer--winner-flash {
+  border-color: var(--accent-teal-2);
+  background: #132a26;
+}
+
+.persona-answer h3 {
+  margin: 0;
+  font: 500 11px var(--font-mono);
+  color: var(--text-label);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.persona-answer p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  font: 400 15px/1.6 var(--font-sans);
+  color: var(--text-secondary);
+}
+
+.persona-answer button {
+  cursor: pointer;
+  text-align: center;
+  font: 600 13.5px var(--font-sans);
+  color: var(--text-primary);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-dashed);
+  padding: 11px;
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.persona-answer button:hover {
+  border-color: var(--accent-teal-2);
+  background: #0f2320;
+}
+
+.persona-reveal {
+  font-size: 0.85em;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+/* Shown the moment Compare is clicked, while both answers are still
+   generating -- the violet-dashed border reads as "write here" rather than
+   the muted/optional look .persona-promote used before it, since this is
+   now the primary way examples get added from this tab, not an afterthought
+   once a winner exists. */
+.persona-compose {
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  background: var(--bg-surface-alt);
+  border: 1px dashed var(--accent-violet);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.persona-compose-label {
+  margin: 0;
+  font: 400 12.5px/1.5 var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+.persona-compose-body {
+  min-height: 6em;
+  resize: vertical;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  padding: 0.6em 0.9em;
+  font: 400 14px var(--font-sans);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.persona-compose-body:focus-visible {
+  border-color: var(--accent-violet);
+}
+
+/* Locked the moment the two generated answers are revealed, so saved text
+   provably predates seeing them. */
+.persona-compose-body:read-only {
+  background: var(--bg-surface-alt);
+  color: var(--text-tertiary);
+  cursor: default;
+}
+
+.persona-compose-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.persona-compose-actions button {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  border: none;
+  padding: 0.6em 1.2em;
+  font: 600 0.9em var(--font-sans);
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-violet-2));
+  transition: filter 0.15s;
+}
+
+.persona-compose-actions button:hover {
+  filter: brightness(1.12);
+}
+
+.persona-compose-actions button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.4) brightness(0.85);
+}
+
+#persona-compose-dismiss {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-tertiary);
+}
+
+.persona-compose-saved {
+  margin: 0;
+  font: 500 0.85em var(--font-sans);
+  color: var(--accent-teal-2);
+}
+
+/* ==========================================================================
+   Backup
+   ========================================================================== */
+.backup-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  max-width: var(--width-reading);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.backup-privacy-banner {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #0f2320;
+  border: 1px solid #1c4a42;
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+}
+
+.backup-privacy-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-teal);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.backup-privacy-banner p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #a8c4bf;
+}
+
+.backup-privacy-banner strong {
+  color: var(--text-secondary);
+}
+
+.backup-config-form {
+  flex: none;
+}
+
+.backup-run-box {
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6em;
+}
+
+.backup-run-actions {
+  display: flex;
+  gap: 0.6em;
+  flex-wrap: wrap;
+}
+
+.backup-run-box button:not(.btn-secondary),
+#backup-save {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  border: none;
+  padding: 0.6em 1.2em;
+  font: 600 0.95em var(--font-sans);
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-violet-2));
+  transition: filter 0.15s;
+}
+
+.backup-run-box button:not(.btn-secondary):hover,
+#backup-save:hover {
+  filter: brightness(1.12);
+}
+
+/* Reusable secondary/fallback button treatment -- transparent, bordered,
+   muted text, for an action that's a fallback to a primary gradient
+   button rather than a peer of equal weight (e.g. "Download backup" next
+   to "Back up now"). */
+.btn-secondary {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  padding: 0.6em 1.2em;
+  font: 600 0.95em var(--font-sans);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-tertiary);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.btn-secondary:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-tertiary);
+}
+
+.backup-status {
+  margin: 0;
+  font-size: 0.85em;
+  color: var(--text-tertiary);
+}
+
+/* ==========================================================================
+   System (components used)
+   ========================================================================== */
+.system-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5em;
+  max-width: var(--width-reading);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.system-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.system-card {
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+
+.system-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.system-card-badge {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.system-card-badge--local {
+  color: var(--accent-teal-2);
+  background: rgba(58, 208, 192, 0.1);
+}
+
+.system-card-badge--cloud {
+  color: var(--accent-amber);
+  background: rgba(244, 191, 79, 0.12);
+}
+
+.system-card-title {
+  margin: 0;
+  font: 600 14px var(--font-sans);
+  color: var(--text-primary);
+}
+
+.system-card-value {
+  margin-left: auto;
+  font: 500 12px var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.system-card-desc {
+  margin: 0;
+  font: 400 13.5px/1.6 var(--font-sans);
+  color: var(--text-tertiary);
+}
+
+/* ==========================================================================
+   OpenRouter credentials modal (the app's first true <dialog> -- reset the
+   UA default chrome, then restyle with the existing tokens/components).
+   ========================================================================== */
+.openrouter-modal {
+  padding: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  box-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.6);
+  width: min(360px, calc(100vw - 48px));
+}
+
+.openrouter-modal::backdrop {
+  background: rgba(6, 7, 9, 0.6);
+}
+
+.openrouter-modal h3 {
+  margin: 0 0 6px;
+  font: 600 16px var(--font-sans);
+  color: var(--text-primary);
+}
+
+.openrouter-modal input {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-surface-alt);
+  color: var(--text-secondary);
+  padding: 0.5em 0.7em;
+  font-size: 0.95em;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s;
+}
+
+.openrouter-modal input::placeholder {
+  color: var(--text-label);
+}
+
+.openrouter-modal input:focus-visible {
+  border-color: var(--accent-violet);
+}
+
+#openrouter-modal-cancel {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-tertiary);
+  padding: 0.6em 1.2em;
+  font: 600 0.95em var(--font-sans);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+#openrouter-modal-cancel:hover {
+  border-color: var(--accent-teal);
+  color: var(--accent-teal-2);
+}
+
+/* ==========================================================================
+   Architecture (mermaid diagram tab)
+   ========================================================================== */
+/* Deliberately no max-width cap (unlike .system-view's reading width) --
+   a diagram benefits from the full window, especially maximized/fullscreen. */
+.architecture-view {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 1.5em;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+/* No flex-centering here on purpose -- centering an overflowing flex child
+   can strand part of its content unreachable by scroll in some browsers.
+   architecture.ts sizes the SVG explicitly in pixels per the current zoom
+   level (see applyZoom), so this scrolls in both directions like any other
+   oversized block content once it's bigger than the container. */
+.architecture-diagram {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  padding: 1.5em;
+  box-sizing: border-box;
+}
+
+.architecture-diagram svg {
+  display: block;
+}
+
+.architecture-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  align-self: flex-start;
+}
+
+.architecture-zoom-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8em;
+  height: 1.8em;
+  font: 600 1em var(--font-sans);
+  color: var(--text-tertiary);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color var(--t-quick) var(--ease-ui), border-color var(--t-quick) var(--ease-ui);
+}
+
+.architecture-zoom-button:hover:not(:disabled) {
+  color: var(--text-secondary);
+  border-color: var(--text-tertiary);
+}
+
+.architecture-zoom-level {
+  min-width: 3.5em;
+  text-align: center;
+  font: 600 0.85em var(--font-mono);
+  color: var(--text-tertiary);
+}
+
+.architecture-zoom-reset {
+  font: 600 11px var(--font-sans);
+  color: var(--text-tertiary);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-strong);
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: color var(--t-quick) var(--ease-ui), border-color var(--t-quick) var(--ease-ui);
+}
+
+.architecture-zoom-reset:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-tertiary);
+}
+
+/* ==========================================================================
+   Global error modal ("A Disturbance") -- a single shared mount point above
+   all tabs (see errorModal.ts). Reads as a disturbance surfacing from
+   beneath (an amber bloom seeping up behind the card) rather than a hard
+   system alarm; deliberately never uses violet/teal so it's never confused
+   with the twin/user identity colors.
+   ========================================================================== */
+.error-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(5, 6, 7, 0.53);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  animation: error-modal-fadein 0.25s var(--ease-ui);
+}
+
+@keyframes error-modal-fadein {
+  from {
+    opacity: 0;
+  }
+}
+
+.error-modal {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  background: var(--error-card-bg);
+  border: 1px solid var(--error-card-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: 0 30px 60px -18px rgba(0, 0, 0, 0.7);
+  animation: error-modal-popin 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes error-modal-popin {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+.error-modal-bloom {
+  position: absolute;
+  left: 50%;
+  bottom: -40px;
+  transform: translateX(-50%);
+  width: 220px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(224, 169, 109, 0.33), transparent 70%);
+  animation: error-modal-seep 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes error-modal-seep {
+  0%,
+  100% {
+    transform: translate(-50%, -3px) scale(1);
+  }
+  50% {
+    transform: translate(calc(-50% + 5px), 4px) scale(1.12);
+  }
+}
+
+.error-modal-content {
+  position: relative;
+  padding: 30px 28px 22px;
+  text-align: center;
+}
+
+.error-modal-sigil {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 18px;
+}
+
+.error-modal-sigil-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--error-accent);
+  opacity: 0.6;
+  animation: error-modal-ringpulse 3s ease-in-out infinite;
+}
+
+@keyframes error-modal-ringpulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+.error-modal-sigil-core {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--error-accent), #7a4a1a);
+}
+
+.error-modal-kicker {
+  font: 500 9px var(--font-mono);
+  letter-spacing: 2px;
+  color: var(--error-accent);
+  margin-bottom: 10px;
+}
+
+.error-modal-title {
+  font: 600 17px var(--font-sans);
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.error-modal-message {
+  font: italic 400 14px/1.6 var(--font-serif);
+  color: var(--error-body-text);
+  margin: 0 0 24px;
+}
+
+.error-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.error-modal-dismiss {
+  cursor: pointer;
+  font: 500 13px var(--font-sans);
+  color: var(--text-tertiary);
+  background: transparent;
+  border: 1px solid #2a2620;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  transition: border-color var(--t-quick) var(--ease-ui), color var(--t-quick) var(--ease-ui);
+}
+
+.error-modal-dismiss:hover {
+  border-color: var(--error-accent);
+  color: var(--error-accent);
+}
+
+.error-modal-primary {
+  cursor: pointer;
+  font: 600 13px var(--font-sans);
+  color: var(--error-card-bg);
+  background: var(--error-accent);
+  border: none;
+  padding: 9px 18px;
+  border-radius: var(--radius-md);
+  transition: filter var(--t-quick) var(--ease-ui);
+}
+
+.error-modal-primary:hover {
+  filter: brightness(1.1);
+}
+
+/* Quiet debug footer -- a greppable error code plus an optional collapsed
+   technical detail, for a coder or an AI agent working on a fix, without
+   disturbing the calm poetic reading of the card above it. */
+.error-modal-footer {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--error-card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.error-modal-code {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.5px;
+  color: var(--text-label);
+}
+
+.error-modal-details-toggle {
+  cursor: pointer;
+  font: 500 10px var(--font-mono);
+  letter-spacing: 0.5px;
+  color: var(--text-label);
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--t-quick) var(--ease-ui);
+}
+
+.error-modal-details-toggle:hover {
+  color: var(--error-accent);
+}
+
+.error-modal-technical {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  max-height: 140px;
+  overflow-y: auto;
+  text-align: left;
+  font: 400 11px/1.5 var(--font-mono);
+  color: var(--text-tertiary);
+  background: var(--bg-sunken);
+  border: 1px solid var(--error-card-border);
+  border-radius: var(--radius-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ==========================================================================
+   First-run name onboarding ("FIRST CONTACT") -- see onboarding.ts. Structured
+   like the error modal (fixed backdrop + centered card) but z-indexed one
+   above it (this is mandatory, the error modal isn't) and with no
+   dismiss/backdrop-click affordance. The orb reuses .voice-orb verbatim --
+   it's already the exact visual the design calls for.
+   ========================================================================== */
+.name-onboarding-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  background: radial-gradient(1000px 620px at 50% -8%, var(--bg-raised), var(--bg-app));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  animation: error-modal-fadein 0.25s var(--ease-ui);
+}
+
+.name-onboarding-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  animation: error-modal-popin 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.name-onboarding-orb {
+  margin: 0 auto 22px;
+}
+
+.name-onboarding-kicker {
+  font: 500 10px var(--font-mono);
+  letter-spacing: 2px;
+  color: var(--accent-teal);
+  margin-bottom: 18px;
+}
+
+.name-onboarding-title {
+  font: 700 24px var(--font-sans);
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+  margin: 0 0 26px;
+}
+
+.name-onboarding-form {
+  text-align: left;
+}
+
+.name-onboarding-label {
+  display: block;
+  font: 500 10px var(--font-mono);
+  letter-spacing: 1px;
+  color: var(--text-label);
+  margin-bottom: 8px;
+}
+
+.name-onboarding-input {
+  display: block;
+  width: 100%;
+  height: 48px;
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-dashed);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 0 16px;
+  font: 500 16px var(--font-sans);
+  transition: border-color var(--t-quick) var(--ease-ui), box-shadow var(--t-quick) var(--ease-ui);
+}
+
+.name-onboarding-input:focus-visible {
+  outline: none;
+  border-color: var(--accent-violet);
+  box-shadow: 0 0 0 3px rgba(123, 92, 255, 0.22);
+}
+
+.name-onboarding-helper {
+  font: 400 9.5px var(--font-mono);
+  color: var(--text-muted);
+  margin: 9px 0 0;
+}
+
+.name-onboarding-error {
+  font: 500 12px var(--font-sans);
+  color: var(--accent-danger);
+  margin: 10px 0 0;
+}
+
+.name-onboarding-submit {
+  position: relative;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  margin-top: 22px;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius-md);
+  font: 600 15px var(--font-sans);
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-violet), var(--accent-teal));
+  transition: filter var(--t-quick) var(--ease-ui);
+}
+
+.name-onboarding-submit:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.name-onboarding-submit:disabled {
+  cursor: not-allowed;
+}
+
+.name-onboarding-footer {
+  font: 400 9.5px var(--font-mono);
+  color: var(--text-muted);
+  margin: 16px 0 0;
+}

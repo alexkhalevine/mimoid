@@ -1,0 +1,52 @@
+name: Signed macOS DMG
+
+# Manual only -- this produces a real, notarized, distributable build using
+# Alex's Apple Developer ID credentials, so it never runs on push/PR.
+on:
+  workflow_dispatch:
+
+jobs:
+  build-signed-dmg:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # The App Store Connect API key can only be downloaded once from
+      # Apple, so it's stored base64-encoded as a secret and decoded here --
+      # written straight to a file, never echoed, and only ever lives in
+      # this ephemeral runner's workspace.
+      - name: Write Apple API key
+        run: echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/apple_api_key.p8"
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_PATH: ${{ runner.temp }}/apple_api_key.p8
+        with:
+          args: --target aarch64-apple-darwin
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mimoid-dmg
+          path: src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+          retention-days: 14

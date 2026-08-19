@@ -1,0 +1,39 @@
+name: Windows build
+
+# Manual only, same as the signed macOS DMG workflow -- this is a real
+# distributable build, not something that should run on every push/PR.
+# Unsigned for now (Windows code signing is a separate follow-up, same as
+# the macOS signing work).
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # Proves the venv-path and stale-port-kill Windows fixes actually
+      # work on a real Windows machine, not just that they compile.
+      - run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - uses: tauri-apps/tauri-action@v0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mimoid-windows
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 14

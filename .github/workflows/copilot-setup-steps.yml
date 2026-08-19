@@ -1,0 +1,30 @@
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Ensure Copilot fallback model is set
+        shell: bash
+        run: |
+          if [ -n "${COPILOT_FALLBACK_MODEL:-}" ]; then
+            exit 0
+          fi
+
+          if [ -n "${COPILOT_MODEL:-}" ]; then
+            echo "COPILOT_FALLBACK_MODEL=${COPILOT_MODEL}" >> "$GITHUB_ENV"
+          else
+            echo "COPILOT_MODEL=sweagent-capi:gpt-5.4" >> "$GITHUB_ENV"
+            echo "COPILOT_FALLBACK_MODEL=sweagent-capi:gpt-5.4" >> "$GITHUB_ENV"
+          fi

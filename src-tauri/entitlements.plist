@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Required for microphone capture under macOS Hardened Runtime (which
+	  Tauri enables by default for the signed .app). Without this
+	  entitlement, getUserMedia() in the WebView is blocked by the OS and
+	  never resolves, so the push-to-talk mic button appears to do nothing.
+	  NSMicrophoneUsageDescription (in Info.plist) supplies the prompt text;
+	  this entitlement is what actually permits the access.
+	-->
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+</dict>
+</plist>

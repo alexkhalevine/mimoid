@@ -1,0 +1,45 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+httpx==0.28.1
+python-multipart==0.0.20
+chromadb==0.6.3
+# chromadb 0.6.3's telemetry code breaks against posthog>=4 (capture() signature
+# changed); pin below that so it doesn't spam "Failed to send telemetry event"
+# on every call. Harmless either way -- this is an offline app with telemetry
+# disabled -- but the noise obscures real logs.
+posthog<4
+# Speech-to-text. Two backends, picked by platform marker so each machine
+# installs exactly the one it can actually run (see stt.py's _backend()).
+#
+# mlx-whisper is the fast path on Apple Silicon, but it is Apple Silicon
+# *only*: pip installs it happily anywhere, then `import mlx_whisper` dies
+# with "libmlx.so: cannot open shared object file" on Linux. Marking it
+# darwin+arm64 keeps that unimportable package off every other platform --
+# which also keeps stt.is_available() honest, since it answers by finding
+# the module.
+mlx-whisper==0.4.3; sys_platform == "darwin" and platform_machine == "arm64"
+# Everywhere else (Linux, Intel Macs, Windows), OpenAI's reference Whisper
+# runs on the same torch install XTTS already needs below -- so it inherits
+# torch's bundled CUDA on an NVIDIA box for free, with no separate CUDA
+# toolkit or cuDNN wrangling. Slower than mlx on a Mac, which is why the
+# marker prefers mlx there.
+openai-whisper==20250625; sys_platform != "darwin" or platform_machine != "arm64"
+# XTTS-v2 voice cloning. Runs on plain PyTorch (CPU everywhere, CUDA on
+# NVIDIA, MPS on Apple Silicon) -- unlike mlx-whisper this one genuinely
+# works cross-platform. `coqui-tts` is the maintained idiap fork; the
+# original `TTS` package is unmaintained and breaks on Python 3.12+.
+# torch/torchaudio aren't declared as coqui-tts's own dependencies (it lets
+# you pick your own build), so they're listed explicitly here.
+coqui-tts==0.27.5
+# Left unpinned and un-indexed on purpose: PyPI's default Linux x86_64 wheel
+# is already the CUDA build (e.g. 2.13.0+cu130) and vendors the CUDA runtime
+# as nvidia-* wheels, so an NVIDIA box needs only the proprietary driver --
+# not the system CUDA toolkit. macOS gets the MPS-capable universal wheel
+# from the same line.
+torch
+torchaudio
+# coqui-tts's XTTS layer imports a helper transformers removed in v5
+# (isin_mps_friendly) -- pin below that until upstream catches up.
+transformers<5
+# torch>=2.9 moved audio IO out to torchcodec; coqui-tts needs it too.
+torchcodec

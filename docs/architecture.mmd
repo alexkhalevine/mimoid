@@ -1,0 +1,62 @@
+flowchart TD
+    classDef person fill:#1c1638,stroke:#a996ff,color:#cabdff;
+    classDef ui fill:#0f2230,stroke:#5ee0d2,color:#9be8de;
+    classDef rust fill:#2a2008,stroke:#f4bf4f,color:#f0d17e;
+    classDef side fill:#141826,stroke:#8a93a8,color:#dce3e9;
+    classDef local fill:#0f2417,stroke:#61c554,color:#a3e096;
+    classDef cloud fill:#2a1414,stroke:#ec6a5e,color:#f0a89f;
+
+    VISITOR["🗣️ Visitor<br/>talks with the twin"]:::person
+    OWNER["🧑‍🏫 Owner<br/>trains the twin"]:::person
+
+    subgraph FE["🖥️ Desktop UI · Tauri WebView · TypeScript"]
+        direction LR
+        TALK["Talk tab<br/>chat · voice orb · hands-free mode"]:::ui
+        TRAIN["Train tab<br/>memories · voice · style ·<br/>vault · persona A/B · backup"]:::ui
+        SYS["System tab<br/>status · resource monitor"]:::ui
+    end
+
+    subgraph RUST["⚙️ Rust core · Tauri"]
+        direction LR
+        LIFE["Process lifecycle<br/>sidecar + Ollama"]:::rust
+        MON["System monitor<br/>CPU / RAM"]:::rust
+    end
+
+    subgraph SIDE["🐍 Python sidecar · FastAPI · 127.0.0.1:8756"]
+        direction LR
+        API["REST API<br/>chat · transcribe · speak ·<br/>memories · vault · style · import · backup"]:::side
+        RAG["Retrieval + persona prompt<br/>memory.py · persona.py"]:::side
+        DB[("SQLite<br/>conversations · metadata")]:::side
+    end
+
+    subgraph LOCAL["🔒 Local engines · on-device · offline"]
+        direction LR
+        WHISPER["mlx-whisper<br/>speech → text"]:::local
+        OLLAMA["Ollama<br/>llama3 + nomic-embed"]:::local
+        CHROMA[("ChromaDB<br/>memories · vault · style")]:::local
+        XTTS["XTTS-v2<br/>text → the owner's voice"]:::local
+    end
+
+    subgraph CLOUD["☁️ Cloud · occasional · opt-in"]
+        direction LR
+        OR["OpenRouter<br/>style-guide distillation"]:::cloud
+        NC["Nextcloud / WebDAV<br/>encrypted backup"]:::cloud
+    end
+
+    VISITOR --> TALK
+    OWNER --> TRAIN
+
+    TALK -->|"1 · voice / text in"| API
+    API -->|"2 · transcribe"| WHISPER
+    API --> RAG
+    RAG -->|"3 · embed + search"| CHROMA
+    RAG -->|"4 · generate reply"| OLLAMA
+    API -->|"5 · synthesize"| XTTS
+    XTTS -->|"6 · reply plays"| TALK
+    TALK -. hands-free loop .-> TALK
+
+    API --> DB
+    RUST -. supervises .-> SIDE
+    SYS --> MON
+    TRAIN -. distill style .-> OR
+    DB -. backup .-> NC
