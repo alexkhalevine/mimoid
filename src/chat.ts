@@ -2,6 +2,7 @@ import {
   confirmPendingCalendarEvent,
   createConversation,
   discardPendingCalendarEvent,
+  exportConversation,
   getMessages,
   listConversations,
   listPendingCalendarEvents,
@@ -14,6 +15,7 @@ import {
 } from "./sidecar";
 import { speak, stopCurrentPlayback } from "./speech";
 import { showError } from "./errorModal";
+import { saveBlobAs } from "./fileSave";
 import { setOrbAudioState } from "./orbStatus";
 import { emitTurnSettled, isConversationModeOn, requestConversationStop } from "./conversationMode";
 import { formatMessageMeta, initSpineNavigator, syncSpine } from "./spine";
@@ -318,6 +320,7 @@ export async function initChat(): Promise<void> {
   const input = document.querySelector<HTMLInputElement>("#chat-input");
   const newMessageBadge = document.querySelector<HTMLButtonElement>("#new-message-badge");
   const newChatButton = document.querySelector<HTMLButtonElement>("#new-chat-button");
+  const exportChatButton = document.querySelector<HTMLButtonElement>("#export-chat-button");
   if (!panel || !list || !form || !input) return;
 
   initSpineNavigator();
@@ -382,6 +385,32 @@ export async function initChat(): Promise<void> {
         input.value = "";
         if (newMessageBadge) newMessageBadge.hidden = true;
         input.focus();
+      })();
+    });
+  }
+
+  if (exportChatButton) {
+    // conversationId is this closure's own `let`, reassigned by "New chat"
+    // above -- wiring the listener here (rather than exporting a getter just
+    // for this) always reads whichever conversation is actually current.
+    exportChatButton.addEventListener("click", () => {
+      void (async () => {
+        exportChatButton.disabled = true;
+        exportChatButton.classList.add("btn-loading");
+        try {
+          const blob = await exportConversation(conversationId);
+          const stamp = new Date()
+            .toISOString()
+            .replace(/[-:]/g, "")
+            .replace(/\..+/, "")
+            .replace("T", "-");
+          await saveBlobAs(blob, `mimoid-chat-${stamp}.json`, ["json"]);
+        } catch (err) {
+          showError("SYM-CHAT-EXPORT-FAILED", { detail: (err as Error).message });
+        } finally {
+          exportChatButton.disabled = false;
+          exportChatButton.classList.remove("btn-loading");
+        }
       })();
     });
   }

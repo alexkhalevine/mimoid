@@ -438,6 +438,12 @@ export async function exportMemories(): Promise<Blob> {
   return res.blob();
 }
 
+export async function exportConversation(conversationId: string): Promise<Blob> {
+  const res = await fetch(`${SIDECAR_BASE_URL}/conversations/${conversationId}/export`);
+  if (!res.ok) throw new Error(await parseErrorDetail(res, "failed to export chat"));
+  return res.blob();
+}
+
 export interface MemoryImportResult {
   created: number;
   skipped_duplicates: number;

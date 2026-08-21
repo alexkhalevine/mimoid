@@ -36,6 +36,12 @@ export const ERROR_CATALOG = {
     body: "The delete didn't go through. It's still safe in your corpus, untouched — try again when you're ready.",
     primaryLabel: "Retry",
   },
+  "SYM-CHAT-EXPORT-FAILED": {
+    code: "SYM-CHAT-EXPORT-FAILED",
+    title: "The transcript didn't come out",
+    body: "Exporting this chat didn't go through. Nothing in the conversation was touched — try again when you're ready.",
+    primaryLabel: "Retry",
+  },
   "SYM-CALENDAR-CONNECT-FAILED": {
     code: "SYM-CALENDAR-CONNECT-FAILED",
     title: "Google didn't pick up",
