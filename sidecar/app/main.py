@@ -78,6 +78,12 @@ INVALID_MEMORIES_EXPORT_DETAIL = (
     'with a top-level "memories" list.'
 )
 
+# Tag on every /conversations/{id}/export file. No matching import route --
+# this is a one-way transcript export, not a portable format meant to be
+# read back in.
+CONVERSATION_EXPORT_FORMAT = "mimoid-chat"
+CONVERSATION_EXPORT_VERSION = 1
+
 
 def _parse_iso_datetime(value: object) -> str | None:
     """Validates an imported entry's `created_at` without ever rejecting the
@@ -333,6 +339,35 @@ def get_messages(conversation_id: str) -> dict[str, list[dict]]:
     if not db.conversation_exists(conversation_id):
         raise HTTPException(status_code=404, detail="conversation not found")
     return {"messages": db.get_messages(conversation_id)}
+
+
+@app.get("/conversations/{conversation_id}/export")
+def export_conversation(conversation_id: str) -> dict:
+    """Downloadable JSON snapshot of one conversation's transcript -- both
+    the owner's messages and the twin's replies, in order.
+
+    Deliberately text messages only. Tool calls/results are never stored on
+    a message row (the assistant's tool-call directives are ephemeral,
+    living only in the in-memory list built for that one streaming request)
+    -- the durable record is the separate tool_runs table, correlated to
+    messages only by rough timestamp with no foreign key tying a run to a
+    specific message. There's no clean way to interleave that into a
+    transcript export, and nobody asked for it; this is a transcript of the
+    conversation as the owner and the twin actually said it."""
+    conversation = db.get_conversation(conversation_id)
+    if conversation is None:
+        raise HTTPException(status_code=404, detail="conversation not found")
+    # Matches what the Talk view actually renders (chat.ts's history load
+    # skips role == "system" the same way) -- "the conversation" means the
+    # owner's and the twin's own turns, not internal bookkeeping rows.
+    messages = [message for message in db.get_messages(conversation_id) if message["role"] != "system"]
+    return {
+        "format": CONVERSATION_EXPORT_FORMAT,
+        "version": CONVERSATION_EXPORT_VERSION,
+        "exported_at": datetime.now(UTC).isoformat(),
+        "conversation": conversation,
+        "messages": messages,
+    }
 
 
 class SendMessageRequest(BaseModel):

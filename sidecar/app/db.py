@@ -220,6 +220,18 @@ def list_conversations() -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def get_conversation(conversation_id: str) -> dict | None:
+    """Single-row lookup, for callers (export) that need a conversation's
+    own title/created_at rather than the full non-archived list.
+    Deliberately not filtered by archived_at -- a conversation someone wants
+    to export by id should still be reachable after "New chat" archived it."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT id, title, created_at FROM conversations WHERE id = ?", (conversation_id,)
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def archive_conversation(conversation_id: str) -> None:
     with get_connection() as conn:
         conn.execute(
