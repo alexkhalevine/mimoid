@@ -5,9 +5,19 @@ from chromadb.config import Settings
 from . import config, ollama
 from .chunking import chunk_text
 
-MEMORIES_COLLECTION = "memories"
+# Personal memories live in a cosine-space collection so search_memories()
+# can apply a relevance floor (config.MEMORY_MAX_DISTANCE) on the same fixed
+# [0, 2] scale the vault uses. The original "memories" collection was created
+# in Chroma's default L2 space, whose distances are unbounded and
+# magnitude-dependent -- no principled threshold exists on that scale, and
+# Chroma can't change a collection's space in place. Hence a new name plus a
+# one-time rebuild from SQLite (reindex_memories_to_cosine below);
+# LEGACY_MEMORIES_COLLECTION is only known to that migration.
+MEMORIES_COLLECTION = "memories_cosine"
+LEGACY_MEMORIES_COLLECTION = "memories"
 VAULT_COLLECTION = "historical_vault"
 STYLE_COLLECTION = "style_corpus"
+_COSINE_COLLECTIONS = {MEMORIES_COLLECTION, VAULT_COLLECTION}
 
 _client: chromadb.ClientAPI | None = None
 _collections: dict[str, Collection] = {}
@@ -34,11 +44,13 @@ def disk_usage_bytes() -> int:
 
 def get_collection(name: str = MEMORIES_COLLECTION) -> Collection:
     if name not in _collections:
-        # The vault gets cosine space so its distances live on a fixed [0, 2]
-        # scale that a relevance threshold (VAULT_MAX_DISTANCE) can be applied
-        # to; the memories collection keeps Chroma's default (L2) space it has
-        # always had, so existing personal retrieval behavior is unchanged.
-        metadata = {"hnsw:space": "cosine"} if name == VAULT_COLLECTION else None
+        # Cosine space puts distances on a fixed [0, 2] scale that a relevance
+        # threshold can be applied to -- see _COSINE_COLLECTIONS above. The
+        # style corpus stays on Chroma's default (L2) space: its retrieval is
+        # unfiltered top-K by design (examples are voice reference, not facts,
+        # so a loose match is harmless), and switching it would mean another
+        # rebuild for no behavioral gain.
+        metadata = {"hnsw:space": "cosine"} if name in _COSINE_COLLECTIONS else None
         _collections[name] = _get_client().get_or_create_collection(name, metadata=metadata)
     return _collections[name]
 
@@ -67,11 +79,73 @@ def deindex_memory(memory_id: str) -> None:
     collection.delete(where={"memory_id": memory_id})
 
 
+def needs_cosine_reindex() -> bool:
+    """True when a legacy L2 memories collection still holds the only copy of
+    the index. Cheap enough to call on every startup."""
+    client = _get_client()
+    existing = {collection.name for collection in client.list_collections()}
+    if LEGACY_MEMORIES_COLLECTION not in existing:
+        return False
+    # Already rebuilt (or rebuilt far enough to be useful) -- the legacy
+    # collection is dropped at the end of a successful rebuild, so finding
+    # both means a previous attempt died partway.
+    return get_collection().count() == 0
+
+
+async def reindex_memories_to_cosine(memories: list[dict]) -> int:
+    """Rebuilds the memories index in the cosine collection from SQLite, which
+    is the source of truth (the Chroma index is derived and disposable -- see
+    backup.py's archive note). Returns how many memories were indexed.
+
+    Deliberately builds the new collection FIRST and only drops the legacy one
+    once every memory is in. Embedding needs Ollama, which may be down at
+    startup; failing partway then leaves the legacy collection untouched and
+    the next launch simply tries again, rather than leaving the twin with no
+    memory index at all. Callers treat any exception as "try again next
+    launch" -- see main.py's lifespan."""
+    if not memories:
+        # Nothing to carry over, but a stale empty legacy collection should
+        # still go, so this doesn't re-run forever on a fresh install.
+        _drop_legacy_memories_collection()
+        return 0
+
+    indexed = 0
+    for record in memories:
+        metadata = {
+            "topic": record.get("topic") or "",
+            "occurred_at": record.get("occurred_at") or "",
+        }
+        await index_memory(record["id"], record["content"], metadata)
+        indexed += 1
+
+    _drop_legacy_memories_collection()
+    return indexed
+
+
+def _drop_legacy_memories_collection() -> None:
+    client = _get_client()
+    if LEGACY_MEMORIES_COLLECTION not in {c.name for c in client.list_collections()}:
+        return
+    client.delete_collection(LEGACY_MEMORIES_COLLECTION)
+    _collections.pop(LEGACY_MEMORIES_COLLECTION, None)
+
+
 async def search_memories(
     query: str,
     top_k: int = config.MEMORY_TOP_K,
     query_embedding: list[float] | None = None,
 ) -> list[dict]:
+    """Semantic search over personal memories, keeping only results within
+    MEMORY_MAX_DISTANCE.
+
+    That relevance floor is what lets the twin admit it doesn't know
+    something. This used to be unfiltered top-K: every question pulled back
+    MEMORY_TOP_K memories whenever the collection was non-empty, and
+    format_memories_section() then presented them as things that actually
+    happened -- so a question about something never recorded still arrived
+    with four unrelated pieces of a real life attached, and the model
+    answered from them. Returning [] here is a real answer, not a failure:
+    it means nothing stored is relevant, and the prompt says so explicitly."""
     collection = get_collection()
     count = collection.count()
     if count == 0:
@@ -82,13 +156,16 @@ async def search_memories(
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=min(top_k, count),
+        include=["documents", "metadatas", "distances"],
     )
 
-    documents = results.get("documents") or [[]]
-    metadatas = results.get("metadatas") or [[]]
+    documents = (results.get("documents") or [[]])[0]
+    metadatas = (results.get("metadatas") or [[]])[0]
+    distances = (results.get("distances") or [[]])[0]
     return [
-        {"content": document, "metadata": metadata}
-        for document, metadata in zip(documents[0], metadatas[0], strict=True)
+        {"content": document, "metadata": metadata, "distance": distance}
+        for document, metadata, distance in zip(documents, metadatas, distances, strict=True)
+        if distance <= config.MEMORY_MAX_DISTANCE
     ]
 
 
@@ -212,25 +289,56 @@ async def search_style_examples(
     ]
 
 
+NO_RELEVANT_MEMORIES_SECTION = (
+    "You have no stored memories that relate to this question. Ordinary "
+    "conversation, opinions, and general knowledge are all still fine to "
+    "answer normally. What you must not do is state a specific personal fact, "
+    "name, date, or event about your own life as though you remembered it -- "
+    "if that's what's being asked for, say plainly that you don't know or "
+    "don't recall it."
+)
+
+MEMORY_LOOKUP_UNAVAILABLE_SECTION = (
+    "Your recall isn't reachable this turn, so you have nothing in front of "
+    "you to answer from. Talk normally, but don't state any specific personal "
+    "fact, name, date, or event about your own life -- if asked for one, say "
+    "you can't bring it to mind right now. Say that as yourself; don't "
+    "explain it as a technical problem."
+)
+
+
 def format_memories_section(memories: list[dict]) -> str:
-    """Formats retrieved memories as a system-prompt section. Empty string
-    if there's nothing relevant -- persona.py skips blank sections.
+    """Formats retrieved memories as a system-prompt section.
 
     Framed assertively -- these are the twin's OWN real memories to answer
     from, not optional trivia. The earlier "use these if helpful, don't force
     them in if irrelevant" wording actively licensed a small local model to
-    ignore relevant memories; this tells it to draw on them when the question
-    touches its life, while still allowing it to skip genuinely unrelated ones
-    (retrieval is unfiltered top-K, so some may not fit the question)."""
+    ignore relevant memories, so the assertive framing has to stay.
+
+    What changed alongside the relevance floor in search_memories(): back when
+    retrieval was unfiltered top-K, this section had to hedge ("only leave out
+    ones that are genuinely unrelated") because some of what it listed
+    genuinely didn't fit the question -- while simultaneously calling all of it
+    things that actually happened. Now that what arrives is actually relevant,
+    the hedge is gone and the boundary is explicit instead: these are the only
+    personal history available, and anything outside them is a "don't know".
+
+    An empty list is a real signal, not an absence: it means the relevance
+    floor filtered everything out, and the twin is told so explicitly rather
+    than the section silently vanishing from the prompt (persona.py used to
+    skip blank sections, which read to the model as no constraint at all)."""
     if not memories:
-        return ""
+        return NO_RELEVANT_MEMORIES_SECTION
 
     memory_lines = "\n".join(f"- {memory['content']}" for memory in memories)
     return (
         "These are your own real memories and experiences -- things that "
-        "actually happened to you. When the question touches your life, draw on "
-        "them and answer from them, in the first person as yourself. Only leave "
-        f"out ones that are genuinely unrelated to what's being asked:\n{memory_lines}"
+        "actually happened to you, picked out because they relate to what's "
+        "being asked. Draw on them and answer from them, in the first person "
+        "as yourself. They are also the only personal history you have in "
+        "front of you right now: if the question asks for a personal detail "
+        "these don't cover, say plainly that you don't know or don't recall "
+        f"it instead of filling the gap with something that sounds right:\n{memory_lines}"
     )
 
 

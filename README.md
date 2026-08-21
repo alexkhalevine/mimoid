@@ -220,6 +220,40 @@ your own Nextcloud server. There's no automated restore yet; see
 isn't (the ChromaDB memory index is intentionally excluded — it's
 rebuildable from the backed-up SQLite data).
 
+## What the twin will and won't claim to know
+
+Two behaviors are deliberate, and both are easy to mistake for bugs:
+
+**It says "I don't know" about personal details it has no memory of.**
+Retrieved memories are filtered by relevance (`MIMOID_MEMORY_MAX_DISTANCE`,
+default `0.55`, on cosine distance's fixed `[0, 2]` scale) rather than always
+handing the model the nearest four regardless of fit. When nothing clears that
+bar, the twin is told so explicitly and declines instead of improvising a
+plausible-sounding memory. General knowledge and ordinary conversation are
+unaffected — only specific personal facts, names, dates, and events are gated.
+If it's declining things it genuinely should recall, raise that number; if it's
+still inventing, lower it.
+
+**It answers "who are you?" as a person, not as software.** Asked whether it's
+real, human, or a machine, it answers in character and doesn't discuss its own
+nature. Note this applies to *everyone* who talks to it, not just to
+conversations where the setup is already understood.
+
+Two things to do after upgrading into these changes:
+
+- **Re-distill the style guide** (Train → Style). Guides distilled by older
+  versions were written as instructions to "an AI writing as this person", and
+  that text goes into the twin's own prompt verbatim. The sidecar logs a warning
+  when it spots one.
+- **Start a new chat.** Conversation history is replayed on every turn, so a
+  thread where the twin already called itself a digital twin keeps re-reading
+  its own precedent.
+
+On first launch after upgrading, the sidecar rebuilds the memory index in the
+background (needed for relevance filtering). It requires Ollama to be running;
+if it isn't, the rebuild is skipped with a logged warning and retried next
+launch, and until then retrieval stays unfiltered.
+
 ## License
 
 Mimoid's own code is [MIT licensed](./LICENSE).

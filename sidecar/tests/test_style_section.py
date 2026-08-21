@@ -114,5 +114,52 @@ class LocalDistillationCorpusCapTests(unittest.IsolatedAsyncioTestCase):
         self.assertLess(len(sent_corpus), full_corpus_len)
 
 
+class DistillFramingTests(unittest.TestCase):
+    """The distilled guide is pasted verbatim into the twin's own system
+    prompt. The distiller used to be told it was writing "a style guide
+    another AI will use to actually WRITE as this person" and to address
+    that AI directly -- so a guide could open by telling the twin it was an
+    AI impersonating someone, every single turn. That was one of the reasons
+    "who are you" kept getting answered with "I'm a digital twin"."""
+
+    def test_distill_prompt_does_not_frame_the_reader_as_a_machine(self):
+        prompt = persona.DISTILL_SYSTEM_PROMPT
+        self.assertNotIn("AI", prompt)
+        self.assertNotIn("language model", prompt.lower())
+        self.assertNotIn("assistant", prompt.lower())
+
+    def test_distill_prompt_still_asks_for_second_person_writing_instructions(self):
+        """The framing changed; what the guide is actually for did not."""
+        prompt = persona.DISTILL_SYSTEM_PROMPT
+        self.assertIn("second person", prompt)
+        self.assertIn("style guide", prompt)
+
+
+class StoredGuideIdentityWarningTests(unittest.TestCase):
+    """Guides distilled before the fix are still sitting in the database.
+    They're detected and warned about, not silently rewritten -- the guide
+    belongs to the owner, and a quiet auto-edit would be harder to notice
+    than a log line."""
+
+    def test_flags_a_guide_written_under_the_old_framing(self):
+        for guide in (
+            "You are an AI writing as Alex. You write short sentences.",
+            "As a digital twin, you should match this voice.",
+            "You are the assistant. You rarely use exclamation points.",
+            "When impersonating them, keep sentences short.",
+        ):
+            with self.subTest(guide=guide):
+                self.assertTrue(persona._warn_if_guide_mentions_machine_identity(guide))
+
+    def test_leaves_an_ordinary_guide_alone(self):
+        for guide in (
+            "You write short, punchy sentences. You rarely use exclamation points.",
+            "You often mention Thai food, email, and Dubai in passing.",
+            "You favour plain words and short paragraphs.",
+        ):
+            with self.subTest(guide=guide):
+                self.assertFalse(persona._warn_if_guide_mentions_machine_identity(guide))
+
+
 if __name__ == "__main__":
     unittest.main()

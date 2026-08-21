@@ -37,6 +37,7 @@ JUDGE_SYSTEM_PROMPT = (
 async def _generate_reply(prompt: str, language: str, owner_name: str) -> str:
     """Mirrors main.py's send_message() retrieval + prompt assembly, minus
     conversation history (single-turn eval) and streaming."""
+    memory_lookup_failed = False
     try:
         query_embedding = await ollama.embed(prompt)
         relevant_memories = await memory.search_memories(prompt, query_embedding=query_embedding)
@@ -44,9 +45,18 @@ async def _generate_reply(prompt: str, language: str, owner_name: str) -> str:
         style_examples = await memory.search_style_examples(prompt, query_embedding=query_embedding)
     except httpx.HTTPError:
         relevant_memories, history_snippets, style_examples = [], [], []
+        # Mirrors send_message(): without this the eval would grade a reply
+        # generated under "no memories are relevant" when what actually
+        # happened is that retrieval broke -- quietly scoring the wrong thing.
+        memory_lookup_failed = True
 
     system_prompt = await persona.build_system_prompt(
-        relevant_memories, history_snippets, language, style_examples, owner_name=owner_name
+        relevant_memories,
+        history_snippets,
+        language,
+        style_examples,
+        owner_name=owner_name,
+        memory_lookup_failed=memory_lookup_failed,
     )
     return await ollama.chat(
         [{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}]
@@ -109,7 +119,12 @@ def _print_summary(batch_id: str, results: list[dict]) -> None:
     avg_score = sum(scored) / len(scored) if scored else None
 
     print(f"\n=== Eval batch {batch_id} ({total} prompts) ===")
-    print(f"Gate failures: {gate_fail_total} (out of {total * 3} gate checks)")
+    # Summed from the actual results, not hardcoded: this used to assume three
+    # gates and silently understated the denominator the moment a fourth was
+    # added. Summing rather than multiplying also keeps it right if a row ever
+    # carries a different gate count.
+    gate_check_total = sum(len(row.get("gates_detail") or []) for row in results)
+    print(f"Gate failures: {gate_fail_total} (out of {gate_check_total} gate checks)")
     print(f"Average judge score: {avg_score:.2f}/5" if avg_score is not None else "Average judge score: n/a")
 
     by_category: dict[str, list[dict]] = {}
@@ -140,7 +155,7 @@ async def run() -> str:
             print(f"  generation failed (is Ollama running?): {exc}")
             continue
 
-        gates = eval_gates.run_gates(reply, language, owner_name)
+        gates = eval_gates.run_gates(reply, language, owner_name, entry["category"])
         try:
             score, notes, judge_model = await _judge(entry["prompt"], reply)
         except (httpx.HTTPError, openrouter.OpenRouterUnavailable) as exc:

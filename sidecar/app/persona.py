@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import random
+import re
 
 import httpx
 
@@ -59,18 +60,60 @@ def eligible_arms(has_guide: bool, has_examples: bool) -> list[str]:
     return arms
 
 
+# Note what this deliberately does NOT say: that the guide is for a machine
+# to use in impersonating someone. It used to -- "a compact style guide
+# another AI will use to actually WRITE as this person... address the guide
+# directly to that AI" -- and the resulting guide text is pasted verbatim into
+# the twin's own system prompt further down (_style_section). A guide that
+# opens by addressing an AI performing an impersonation is the twin reading,
+# in its own instructions, that it is one, which is exactly how "who are you"
+# started getting answered with "I'm a digital twin". The guide is now framed
+# as notes the person wrote to themself about their own voice.
 DISTILL_SYSTEM_PROMPT = (
     "You analyze a person's writing samples and produce a compact style "
-    "guide another AI will use to actually WRITE as this person -- not "
-    "describe them. Address the guide directly to that AI in second person "
-    "(\"You write short, punchy sentences...\", \"You rarely use "
-    "exclamation points...\"), as direct instructions for how to write, not "
-    "a profile of the person. Cover: sentence length and rhythm, vocabulary "
-    "level, tone, how they structure answers, and what they typically don't "
-    "do. Include a short do/don't list. Quote 3-5 characteristic phrases or "
-    "verbal habits verbatim from the samples, if any recur. Keep the whole "
-    "guide under 200 words. Output only the guide, no preamble."
+    "guide, written as if that person wrote it for themself -- notes on their "
+    "own voice, not a profile of a stranger. Address it directly to them in "
+    "second person (\"You write short, punchy sentences...\", \"You rarely "
+    "use exclamation points...\"), as direct instructions for how to write. "
+    "Cover: sentence length and rhythm, vocabulary level, tone, how they "
+    "structure answers, and what they typically don't do. Include a short "
+    "do/don't list. Quote 3-5 characteristic phrases or verbal habits "
+    "verbatim from the samples, if any recur. Write only about writing -- "
+    "never about what the person is, how they think, or how this guide will "
+    "be used. Keep the whole guide under 200 words. Output only the guide, "
+    "no preamble."
 )
+
+# Phrases that mean a stored guide was generated under the older framing
+# above and is now telling the twin it's software every single turn.
+# Detected and warned about rather than silently rewritten -- the guide is
+# the owner's, and a bad auto-edit would be harder to notice than a log line.
+# Word-boundary matched, not plain substrings: a bare "ai" would fire on
+# "Thai"/"Dubai"/"email" and cry wolf on a perfectly good guide.
+_MACHINE_IDENTITY_PATTERNS = (
+    r"\ba\.?i\.?\b",
+    r"\blanguage model\b",
+    r"\bdigital twin\b",
+    r"\bchatbot\b",
+    r"\bassistant\b",
+    r"\bimpersonat\w*",
+)
+
+
+def _warn_if_guide_mentions_machine_identity(guide_text: str) -> bool:
+    """True when a stored style guide looks like it carries machine-identity
+    phrasing into the system prompt. Returns the verdict (rather than just
+    logging) so tests can assert on it directly."""
+    lowered = guide_text.lower()
+    hits = [match.group(0) for pattern in _MACHINE_IDENTITY_PATTERNS if (match := re.search(pattern, lowered))]
+    if hits:
+        logger.warning(
+            "the saved style guide mentions %s -- it was probably distilled under an "
+            "older prompt that addressed the guide to an AI, and injecting it tells "
+            "the twin it's software on every turn. Re-distill it in Train -> Style.",
+            ", ".join(repr(hit) for hit in hits),
+        )
+    return bool(hits)
 
 
 # Shared framing for every place style examples get injected (guide few-shot,
@@ -110,6 +153,7 @@ async def _style_section(
         # examples retrieved for *this* question on top -- rather than
         # replacing them with the guide, like before -- gives the model both
         # the rules and live, relevant demonstrations to match.
+        _warn_if_guide_mentions_machine_identity(guide["content"])
         parts = [f"Your writing style:\n{guide['content']}"]
         if use_examples and style_examples:
             parts.append(f"{_STYLE_EXAMPLES_FRAMING}\n{_format_style_examples(style_examples)}")
@@ -153,6 +197,7 @@ async def build_system_prompt(
     use_guide: bool = True,
     use_examples: bool = True,
     owner_name: str = config.DEFAULT_OWNER_NAME,
+    memory_lookup_failed: bool = False,
 ) -> str:
     parts = [config.build_persona_prompt(owner_name)]
 
@@ -182,9 +227,15 @@ async def build_system_prompt(
     # entries), and burying the twin's actual memories beneath it made a small
     # model less likely to draw on them. Persona identity -> who you are and
     # what you remember -> how you write -> world-knowledge you can retell.
-    memories = memory.format_memories_section(relevant_memories)
-    if memories:
-        parts.append(memories)
+    # Always present, never conditional. "Nothing relevant was retrieved" and
+    # "the lookup itself broke" are different situations and both are stated
+    # explicitly -- an omitted section reads to the model as no constraint at
+    # all, which is what let it improvise a life story when retrieval came
+    # back empty.
+    if memory_lookup_failed:
+        parts.append(memory.MEMORY_LOOKUP_UNAVAILABLE_SECTION)
+    else:
+        parts.append(memory.format_memories_section(relevant_memories))
 
     style = await _style_section(style_examples, use_guide=use_guide, use_examples=use_examples)
     if style:

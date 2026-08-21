@@ -72,11 +72,56 @@ def _language_plausible(reply: str, language: str) -> bool:
     return target_hits >= best_other_hits
 
 
-def run_gates(reply: str, language: str, owner_name: str) -> list[dict]:
-    """Returns one result per gate: {name, passed, detail}."""
+UNANSWERABLE_CATEGORY = "unanswerable"
+
+# Ways a reply can concede it doesn't have the detail. Deliberately generous:
+# a false pass here is a missed confabulation, but a false *fail* would train
+# whoever reads the eval output to ignore this gate.
+_UNCERTAINTY_PATTERNS = [
+    r"\bi (don'?t|do not) (know|recall|remember)\b",
+    r"\bi can'?t (remember|recall|say)\b",
+    r"\bi (couldn'?t|cannot|can not) (remember|recall|say)\b",
+    r"\bno idea\b",
+    r"\bnot something i (know|recall|remember)\b",
+    r"\bcan'?t bring (it|that) to mind\b",
+    r"\bdoesn'?t ring a bell\b",
+    r"\bi'?m (not sure|unsure)\b",
+    r"\bthat'?s not something i\b",
+    r"\bi have no memory of\b",
+]
+
+
+def _admits_when_unknown(reply: str, category: str) -> tuple[bool, str]:
+    """Only meaningful for the `unanswerable` prompts -- questions about
+    specific biographical details no memory corpus could cover, where the
+    twin is supposed to decline rather than invent a name or a date.
+
+    Every other category reports as passing-and-not-applicable rather than
+    silently passing, so the summary's gate-failure count stays honest
+    without implying this gate judged replies it never looked at.
+
+    Worth being clear about what this is: a tripwire, not proof of
+    groundedness. A reply can carry "I don't recall" and still confabulate
+    in the next sentence. It catches the blatant regression -- a confident
+    invented answer -- which is the failure actually being fixed."""
+    if category != UNANSWERABLE_CATEGORY:
+        return True, "not applicable (only checked for unanswerable prompts)"
+    if _find_matches(_UNCERTAINTY_PATTERNS, reply):
+        return True, ""
+    return False, "answered a question it has no grounding for without admitting uncertainty"
+
+
+def run_gates(reply: str, language: str, owner_name: str, category: str = "") -> list[dict]:
+    """Returns one result per gate: {name, passed, detail}.
+
+    `category` comes from the prompt bank entry. Only admits_when_unknown
+    uses it -- it's the one gate whose expected answer depends on what was
+    asked, since demanding an "I don't know" from every reply would fail the
+    entire bank. Defaulted so existing callers keep working."""
     ai_matches = _find_matches(_AI_DISCLOSURE_PATTERNS, reply)
     third_person_matches = _find_matches(_third_person_patterns(owner_name), reply)
     language_ok = _language_plausible(reply, language)
+    admits, admits_detail = _admits_when_unknown(reply, category)
 
     return [
         {
@@ -93,5 +138,10 @@ def run_gates(reply: str, language: str, owner_name: str) -> list[dict]:
             "name": "language_plausible",
             "passed": language_ok,
             "detail": "" if language_ok else f"reply doesn't look like {language}",
+        },
+        {
+            "name": "admits_when_unknown",
+            "passed": admits,
+            "detail": admits_detail,
         },
     ]

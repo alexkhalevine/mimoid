@@ -119,6 +119,33 @@ async def lifespan(_: FastAPI):
                 logger.exception("TTS warm-up failed (a later /speak request will just retry)")
 
     asyncio.create_task(_warm_up())
+
+    # One-time rebuild of the memories index into a cosine-space collection,
+    # which is what makes the relevance floor in search_memories() possible
+    # (see config.MEMORY_MAX_DISTANCE). Background and non-fatal for the same
+    # reason as the warm-up above -- and additionally because embedding every
+    # memory needs Ollama, which often isn't up yet at launch. Until this
+    # succeeds the twin keeps using the legacy ungated index, i.e. the old
+    # improvise-from-irrelevant-memories behavior persists; the log lines
+    # below are deliberately loud enough to notice if it never runs.
+    async def _reindex_memories() -> None:
+        if not await run_in_threadpool(memory.needs_cosine_reindex):
+            return
+        stored = await run_in_threadpool(db.list_memories)
+        logger.info("rebuilding the memories index for relevance filtering (%d memories)…", len(stored))
+        try:
+            with activity.track("Rebuilding memory index…"):
+                indexed = await memory.reindex_memories_to_cosine(stored)
+            logger.info("memory index rebuilt (%d memories indexed)", indexed)
+        except Exception:
+            logger.exception(
+                "memory index rebuild failed -- retrying on the next launch. Until it "
+                "succeeds, memory retrieval stays unfiltered. Is Ollama running with "
+                "'%s' pulled?",
+                config.EMBEDDING_MODEL,
+            )
+
+    asyncio.create_task(_reindex_memories())
     yield
 
 
@@ -434,7 +461,16 @@ async def send_message(conversation_id: str, body: SendMessageRequest) -> Stream
         )
 
     system_prompt = await persona.build_system_prompt(
-        relevant_memories, history_snippets, _current_language(), style_examples, owner_name=_current_owner_name()
+        relevant_memories,
+        history_snippets,
+        _current_language(),
+        style_examples,
+        owner_name=_current_owner_name(),
+        # Distinct from "retrieval returned nothing": there, the twin genuinely
+        # has no relevant memories and should say so; here its recall is simply
+        # unreachable, and claiming "I have no memory of that" would be a
+        # confident false statement about its own past.
+        memory_lookup_failed=query_embedding is None,
     )
     windowed_history = _windowed_history(history, system_prompt)
     chat_messages = [{"role": "system", "content": system_prompt}] + [
